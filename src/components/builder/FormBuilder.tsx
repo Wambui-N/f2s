@@ -10,7 +10,7 @@ import { FieldSettingsPanel } from './FieldSettingsPanel';
 import { FormTemplates } from './FormTemplates';
 import { ConditionalLogic, ConditionalRule } from './ConditionalLogic';
 import { SheetMapping } from './SheetMapping';
-import { useUndoRedo, UndoRedoButtons } from './UndoRedo';
+import { UndoRedoButtons } from './UndoRedoButtons';
 import { PublishFlow } from './PublishFlow';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { reorder } from '@atlaskit/pragmatic-drag-and-drop/reorder';
@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useFormStore } from '@/store/formStore';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 
 export function FormBuilder({ onBack }: { onBack: () => void }) {
   const {
@@ -54,9 +55,14 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const [showPublishFlow, setShowPublishFlow] = useState(false);
   const [activeTab, setActiveTab] = useState<'preview' | 'logic' | 'mapping'>('preview');
 
-  // Undo/Redo functionality - This would need to be integrated with Zustand
-  // For now, we'll keep it simple and not integrate it with the store
-  // const { canUndo, canRedo, undo, redo, saveState } = useUndoRedo(formData);
+  const {
+    currentState: undoRedoCurrentState,
+    saveState: saveUndoRedoState,
+    undo: undoState,
+    redo: redoState,
+    canUndo,
+    canRedo,
+  } = useUndoRedo(formData);
 
   useEffect(() => {
     const el = ref.current;
@@ -166,15 +172,18 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               <Eye size={16} />
               <span>Preview</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              // onClick={undo} disabled={!canUndo}
-              className="flex items-center space-x-2"
-            >
-              <Undo2 size={16} />
-              <span>Undo</span>
-            </Button>
+            <UndoRedoButtons
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={() => {
+                const prevState = undoState();
+                if (prevState) useFormStore.setState({ formData: prevState });
+              }}
+              onRedo={() => {
+                const nextState = redoState();
+                if (nextState) useFormStore.setState({ formData: nextState });
+              }}
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -267,17 +276,6 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
           <div className="w-80 border-l bg-white">
             <FieldSettingsPanel
               field={selectedField}
-              onUpdate={updateField}
-              onDelete={deleteField}
-              onDuplicate={duplicateField}
-              onMoveUp={(fieldId: string) => {
-                const index = formData.fields.findIndex((f) => f.id === fieldId);
-                if (index > 0) moveField(index, index - 1);
-              }}
-              onMoveDown={(fieldId: string) => {
-                const index = formData.fields.findIndex((f) => f.id === fieldId);
-                if (index < formData.fields.length - 1) moveField(index, index + 1);
-              }}
               onClose={() => setSelectedField(null)}
             />
           </div>

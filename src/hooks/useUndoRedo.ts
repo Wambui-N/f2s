@@ -1,116 +1,38 @@
 "use client";
 
-import React, { useCallback, useEffect } from 'react';
-import { FormData } from './types';
+import { useState, useCallback } from 'react';
 
-interface UndoRedoState {
-  history: FormData[];
-  currentIndex: number;
-  maxHistorySize: number;
-}
+export function useUndoRedo<T>(initialState: T) {
+  const [history, setHistory] = useState<T[]>([initialState]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-interface UndoRedoHook {
-  state: UndoRedoState;
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => FormData | null;
-  redo: () => FormData | null;
-  saveState: (formData: FormData) => void;
-  clearHistory: () => void;
-}
+  const currentState = history[currentIndex];
+  const canUndo = currentIndex > 0;
+  const canRedo = currentIndex < history.length - 1;
 
-export function useUndoRedo(initialState: FormData, maxHistorySize: number = 50): UndoRedoHook {
-  const [state, setState] = React.useState<UndoRedoState>({
-    history: [initialState],
-    currentIndex: 0,
-    maxHistorySize
-  });
-
-  const canUndo = state.currentIndex > 0;
-  const canRedo = state.currentIndex < state.history.length - 1;
-
-  const saveState = useCallback((formData: FormData) => {
-    setState(prevState => {
-      const newHistory = [...prevState.history.slice(0, prevState.currentIndex + 1)];
-      newHistory.push({ ...formData });
-      
-      // Limit history size
-      if (newHistory.length > prevState.maxHistorySize) {
-        newHistory.shift();
-        return {
-          ...prevState,
-          history: newHistory,
-          currentIndex: prevState.currentIndex
-        };
-      }
-      
-      return {
-        ...prevState,
-        history: newHistory,
-        currentIndex: newHistory.length - 1
-      };
+  const saveState = useCallback((newState: T) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, currentIndex + 1);
+      return [...newHistory, newState];
     });
-  }, []);
+    setCurrentIndex(prev => prev + 1);
+  }, [currentIndex]);
 
-  const undo = useCallback((): FormData | null => {
-    if (!canUndo) return null;
-    
-    setState(prevState => ({
-      ...prevState,
-      currentIndex: prevState.currentIndex - 1
-    }));
-    
-    return state.history[state.currentIndex - 1];
-  }, [canUndo, state.currentIndex, state.history]);
+  const undo = useCallback(() => {
+    if (canUndo) {
+      setCurrentIndex(prev => prev - 1);
+    }
+    return history[currentIndex - 1];
+  }, [canUndo, currentIndex, history]);
 
-  const redo = useCallback((): FormData | null => {
-    if (!canRedo) return null;
-    
-    setState(prevState => ({
-      ...prevState,
-      currentIndex: prevState.currentIndex + 1
-    }));
-    
-    return state.history[state.currentIndex + 1];
-  }, [canRedo, state.currentIndex, state.history]);
+  const redo = useCallback(() => {
+    if (canRedo) {
+      setCurrentIndex(prev => prev + 1);
+    }
+    return history[currentIndex + 1];
+  }, [canRedo, currentIndex, history]);
 
-  const clearHistory = useCallback(() => {
-    setState(prevState => ({
-      history: [prevState.history[prevState.currentIndex]],
-      currentIndex: 0,
-      maxHistorySize: prevState.maxHistorySize
-    }));
-  }, []);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
-        event.preventDefault();
-        if (canUndo) {
-          undo();
-        }
-      } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
-        event.preventDefault();
-        if (canRedo) {
-          redo();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canUndo, canRedo, undo, redo]);
-
-  return {
-    state,
-    canUndo,
-    canRedo,
-    undo,
-    redo,
-    saveState,
-    clearHistory
-  };
+  return { currentState, saveState, undo, redo, canUndo, canRedo };
 }
 
 // Undo/Redo UI Component
