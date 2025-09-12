@@ -59,12 +59,12 @@ export function FieldSettingsPanel({
   };
   
   const moveFieldUp = (fieldId: string) => {
-    const index = formData.fields.findIndex((f) => f.id === fieldId);
+    const index = formData.fields.findIndex((f: FormField) => f.id === fieldId);
     if (index > 0) moveField(index, index - 1);
   };
   
   const moveFieldDown = (fieldId: string) => {
-    const index = formData.fields.findIndex((f) => f.id === fieldId);
+    const index = formData.fields.findIndex((f: FormField) => f.id === fieldId);
     if (index < formData.fields.length - 1) moveField(index, index + 1);
   };
 
