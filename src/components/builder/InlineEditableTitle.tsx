@@ -16,7 +16,7 @@ export function InlineEditableTitle({ title, onSave, className = '' }: InlineEdi
   const [editValue, setEditValue] = useState(title);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setEditValue(title);

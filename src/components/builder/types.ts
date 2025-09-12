@@ -49,3 +49,13 @@ export interface FormData {
     };
     lastSaved?: Date;
 }
+
+export interface ConditionalRule {
+  id: string;
+  conditionField: string;
+  operator: 'equals' | 'contains' | 'not_empty' | 'empty';
+  value: string;
+  action: 'show' | 'hide';
+  targetField: string;
+  enabled: boolean;
+}

@@ -6,18 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormField } from './types';
+import { FormField, ConditionalRule } from './types';
 import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
-
-export interface ConditionalRule {
-  id: string;
-  conditionField: string;
-  operator: 'equals' | 'contains' | 'not_empty' | 'empty';
-  value: string;
-  action: 'show' | 'hide';
-  targetField: string;
-  enabled: boolean;
-}
 
 interface ConditionalLogicProps {
   fields: FormField[];

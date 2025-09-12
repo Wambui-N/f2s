@@ -5,7 +5,7 @@ import {
   FormField,
   FieldTypes,
   ConditionalRule,
-} from '../../components/builder/types';
+} from '@/components/builder/types';
 
 // Helper to generate unique IDs
 const generateId = () =>
