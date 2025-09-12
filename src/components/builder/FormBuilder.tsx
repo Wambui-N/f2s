@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { FieldTypes, FormField, FormData } from './types';
 import { FormFieldElement } from './FormFieldElement';
 import { InlineEditableTitle } from './InlineEditableTitle';
@@ -12,6 +15,7 @@ import { ConditionalLogic, ConditionalRule } from './ConditionalLogic';
 import { SheetMapping } from './SheetMapping';
 import { UndoRedoButtons } from './UndoRedoButtons';
 import { PublishFlow } from './PublishFlow';
+import { DesignPanel } from './DesignPanel';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { reorder } from '@atlaskit/pragmatic-drag-and-drop/reorder';
 import {
@@ -121,7 +125,34 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             </div>
           )}
 
-          {/* Other sidebar content can be added here */}
+          {rightSidebar === 'design' && (
+            <DesignPanel />
+          )}
+
+          {rightSidebar === 'settings' && (
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="form-title">Form Title</Label>
+                <Input
+                  id="form-title"
+                  value={formData.title}
+                  onChange={(e) => updateFormTitle(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="form-description">Description</Label>
+                <Textarea
+                  id="form-description"
+                  value={formData.description || ''}
+                  onChange={(e) => updateFormDescription(e.target.value)}
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
