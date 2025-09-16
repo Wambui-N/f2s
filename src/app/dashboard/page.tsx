@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FormBuilder } from '@/components/builder/FormBuilder';
 import { 
   Plus, 
   FileText, 
@@ -18,78 +18,73 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-interface FormData {
+// The FormData type from the database will be slightly different
+// from the one in the form builder's store.
+interface FormRecord {
   id: string;
   title: string;
   description?: string;
-  createdAt: Date;
-  submissions: number;
+  created_at: string; // Supabase sends timestamps as strings
   status: 'draft' | 'published';
-  lastSubmission?: Date;
+  // We'll add submission counts later
 }
 
 export default function Dashboard() {
-  const [showFormBuilder, setShowFormBuilder] = useState(false);
-  const [selectedForm, setSelectedForm] = useState<FormData | null>(null);
+  const [forms, setForms] = useState<FormRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration
-  const [forms, setForms] = useState<FormData[]>([
-    {
-      id: '1',
-      title: 'Client Consultation Form',
-      description: 'Capture new client inquiries and project details',
-      createdAt: new Date('2024-01-15'),
-      submissions: 23,
-      status: 'published',
-      lastSubmission: new Date('2024-01-20')
-    },
-    {
-      id: '2',
-      title: 'Photography Booking Form',
-      description: 'Book photography sessions and collect client preferences',
-      createdAt: new Date('2024-01-10'),
-      submissions: 8,
-      status: 'published',
-      lastSubmission: new Date('2024-01-19')
-    },
-    {
-      id: '3',
-      title: 'Event Planning Inquiry',
-      description: 'Gather event details and budget information',
-      createdAt: new Date('2024-01-12'),
-      submissions: 0,
-      status: 'draft'
-    }
-  ]);
+  useEffect(() => {
+    const fetchForms = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('forms')
+        .select('id, title, description, created_at, status')
+        .order('created_at', { ascending: false });
 
-  const totalSubmissions = forms.reduce((sum, form) => sum + form.submissions, 0);
-  const publishedForms = forms.filter(form => form.status === 'published').length;
-  const recentSubmissions = forms.filter(form => 
-    form.lastSubmission && 
-    (Date.now() - form.lastSubmission.getTime()) < 7 * 24 * 60 * 60 * 1000
-  ).length;
+      if (error) {
+        console.error('Error fetching forms:', error);
+      } else {
+        // Here we're assuming submissions count is 0 for now.
+        const formsWithSubmissions = data.map(form => ({ ...form, submissions: 0 }));
+        setForms(formsWithSubmissions as any); // Cast because submissions is added
+      }
+      setLoading(false);
+    };
 
-  const handleCreateForm = () => {
-    setShowFormBuilder(true);
-  };
+    fetchForms();
+  }, []);
 
-  const handleEditForm = (form: FormData) => {
-    setSelectedForm(form);
-    setShowFormBuilder(true);
-  };
-
-  const handleDeleteForm = (formId: string) => {
+  const handleDeleteForm = async (formId: string) => {
+    // Optimistic deletion
     setForms(forms.filter(form => form.id !== formId));
+    
+    const { error } = await supabase
+      .from('forms')
+      .delete()
+      .match({ id: formId });
+      
+    if (error) {
+      console.error('Error deleting form:', error);
+      // Here you might want to add logic to revert the optimistic deletion
+      // and show an error message to the user.
+    }
   };
 
-  const handleBackToDashboard = () => {
-    setShowFormBuilder(false);
-    setSelectedForm(null);
-  };
+  const totalSubmissions = forms.reduce((sum, form: any) => sum + (form.submissions || 0), 0);
+  const publishedForms = forms.filter(form => form.status === 'published').length;
+  // This will require a more complex query later on
+  const recentSubmissions = 0;
 
-  if (showFormBuilder) {
-    return <FormBuilder onBack={handleBackToDashboard} />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-muted/40 flex items-center justify-center">
+        <div className="text-center">
+          <p>Loading your forms...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -103,10 +98,12 @@ export default function Dashboard() {
               Manage your forms and track submissions
             </p>
           </div>
-          <Button onClick={handleCreateForm} size="lg">
-            <Plus size={20} className="mr-2" />
-            Create New Form
-          </Button>
+          <Link href="/editor" passHref>
+            <Button size="lg">
+              <Plus size={20} className="mr-2" />
+              Create New Form
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Cards */}
@@ -176,14 +173,16 @@ export default function Dashboard() {
                 <p className="text-muted-foreground mb-6">
                   Create your first form to start collecting client information
                 </p>
-                <Button onClick={handleCreateForm}>
-                  <Plus size={16} className="mr-2" />
-                  Create Your First Form
-                </Button>
+                <Link href="/editor" passHref>
+                  <Button>
+                    <Plus size={16} className="mr-2" />
+                    Create Your First Form
+                  </Button>
+                </Link>
               </div>
             ) : (
               <div className="space-y-4">
-                {forms.map((form) => (
+                {forms.map((form: any) => (
                   <div
                     key={form.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -201,30 +200,25 @@ export default function Dashboard() {
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <Calendar size={14} className="mr-1" />
-                          Created {form.createdAt.toLocaleDateString()}
+                          Created {new Date(form.created_at).toLocaleDateString()}
                         </div>
                         <div className="flex items-center">
                           <Users size={14} className="mr-1" />
                           {form.submissions} submissions
                         </div>
-                        {form.lastSubmission && (
-                          <div className="flex items-center">
-                            <TrendingUp size={14} className="mr-1" />
-                            Last: {form.lastSubmission.toLocaleDateString()}
-                          </div>
-                        )}
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditForm(form)}
-                      >
-                        <Edit size={14} className="mr-1" />
-                        Edit
-                      </Button>
+                      <Link href={`/editor/${form.id}`} passHref>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Edit size={14} className="mr-1" />
+                          Edit
+                        </Button>
+                      </Link>
                       <Button
                         variant="outline"
                         size="sm"

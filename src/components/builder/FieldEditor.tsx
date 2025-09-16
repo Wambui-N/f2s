@@ -90,7 +90,7 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
           <Label htmlFor="defaultValue">Default Value</Label>
           <Input
             id="defaultValue"
-            value={editedField.defaultValue || ''}
+            value={typeof editedField.defaultValue === 'string' ? editedField.defaultValue : String(editedField.defaultValue || '')}
             onChange={(e) => setEditedField({ ...editedField, defaultValue: e.target.value })}
             placeholder="Default value (optional)"
           />

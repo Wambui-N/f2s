@@ -17,7 +17,11 @@ import {
   EyeOff,
   Plus,
   GripVertical,
-  X
+  X,
+  Star,
+  Heart,
+  Circle,
+  MapPin
 } from 'lucide-react';
 import { useFormStore } from '@/store/formStore';
 
@@ -191,7 +195,7 @@ export function FieldSettingsPanel({
             <Label htmlFor="defaultValue" className="text-xs">Default Value</Label>
             <Input
               id="defaultValue"
-              value={editedField.defaultValue || ''}
+              value={typeof editedField.defaultValue === 'string' ? editedField.defaultValue : String(editedField.defaultValue || '')}
               onChange={(e) => setEditedField({ ...editedField, defaultValue: e.target.value })}
               placeholder="Default value (optional)"
             />
@@ -343,6 +347,221 @@ export function FieldSettingsPanel({
                   })}
                   placeholder="10"
                 />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editedField.multiple || false}
+                  onCheckedChange={(checked) => setEditedField({ ...editedField, multiple: checked })}
+                />
+                <Label className="text-sm">Allow multiple files</Label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {editedField.type === 'image' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Image Upload Settings</Label>
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="maxSize" className="text-xs">Max File Size (MB)</Label>
+                <Input
+                  id="maxSize"
+                  type="number"
+                  value={editedField.validation?.max || 10}
+                  onChange={(e) => setEditedField({
+                    ...editedField,
+                    validation: {
+                      ...editedField.validation,
+                      max: e.target.value ? Number(e.target.value) : undefined
+                    }
+                  })}
+                  placeholder="10"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editedField.multiple || false}
+                  onCheckedChange={(checked) => setEditedField({ ...editedField, multiple: checked })}
+                />
+                <Label className="text-sm">Allow multiple images</Label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {editedField.type === 'rating' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Rating Settings</Label>
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="ratingShape" className="text-xs">Rating Shape</Label>
+                <select
+                  id="ratingShape"
+                  value={editedField.ratingConfig?.shape || 'star'}
+                  onChange={(e) => setEditedField({
+                    ...editedField,
+                    ratingConfig: {
+                      shape: e.target.value as 'star' | 'heart' | 'circle',
+                      scale: editedField.ratingConfig?.scale || 5,
+                      labelMin: editedField.ratingConfig?.labelMin || '',
+                      labelMax: editedField.ratingConfig?.labelMax || ''
+                    }
+                  })}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="star">Star</option>
+                  <option value="heart">Heart</option>
+                  <option value="circle">Circle</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="ratingScale" className="text-xs">Rating Scale</Label>
+                <select
+                  id="ratingScale"
+                  value={editedField.ratingConfig?.scale || 5}
+                  onChange={(e) => setEditedField({
+                    ...editedField,
+                    ratingConfig: {
+                      shape: editedField.ratingConfig?.shape || 'star',
+                      scale: Number(e.target.value) as 5 | 10,
+                      labelMin: editedField.ratingConfig?.labelMin || '',
+                      labelMax: editedField.ratingConfig?.labelMax || ''
+                    }
+                  })}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="5">5 stars</option>
+                  <option value="10">10 stars</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="labelMin" className="text-xs">Min Label</Label>
+                  <Input
+                    id="labelMin"
+                    value={editedField.ratingConfig?.labelMin || ''}
+                    onChange={(e) => setEditedField({
+                      ...editedField,
+                      ratingConfig: {
+                        shape: editedField.ratingConfig?.shape || 'star',
+                        scale: editedField.ratingConfig?.scale || 5,
+                        labelMin: e.target.value,
+                        labelMax: editedField.ratingConfig?.labelMax || ''
+                      }
+                    })}
+                    placeholder="Poor"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="labelMax" className="text-xs">Max Label</Label>
+                  <Input
+                    id="labelMax"
+                    value={editedField.ratingConfig?.labelMax || ''}
+                    onChange={(e) => setEditedField({
+                      ...editedField,
+                      ratingConfig: {
+                        shape: editedField.ratingConfig?.shape || 'star',
+                        scale: editedField.ratingConfig?.scale || 5,
+                        labelMin: editedField.ratingConfig?.labelMin || '',
+                        labelMax: e.target.value
+                      }
+                    })}
+                    placeholder="Excellent"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {editedField.type === 'address' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Address Fields</Label>
+            <div className="space-y-2">
+              {['street', 'city', 'state', 'zip', 'country'].map((fieldName) => (
+                <div key={fieldName} className="flex items-center space-x-2">
+                  <Switch
+                    checked={editedField.addressConfig?.[fieldName as keyof typeof editedField.addressConfig]?.enabled || false}
+                    onCheckedChange={(checked) => setEditedField({
+                      ...editedField,
+                      addressConfig: {
+                        street: editedField.addressConfig?.street || { enabled: false, label: 'Street Address' },
+                        city: editedField.addressConfig?.city || { enabled: false, label: 'City' },
+                        state: editedField.addressConfig?.state || { enabled: false, label: 'State / Province' },
+                        zip: editedField.addressConfig?.zip || { enabled: false, label: 'ZIP / Postal Code' },
+                        country: editedField.addressConfig?.country || { enabled: false, label: 'Country' },
+                        [fieldName]: {
+                          ...editedField.addressConfig?.[fieldName as keyof typeof editedField.addressConfig],
+                          enabled: checked
+                        }
+                      }
+                    })}
+                  />
+                  <Label className="text-sm capitalize">{fieldName} Address</Label>
+                  {editedField.addressConfig?.[fieldName as keyof typeof editedField.addressConfig]?.enabled && (
+                    <Input
+                      value={editedField.addressConfig?.[fieldName as keyof typeof editedField.addressConfig]?.label || ''}
+                      onChange={(e) => setEditedField({
+                        ...editedField,
+                        addressConfig: {
+                          street: editedField.addressConfig?.street || { enabled: false, label: 'Street Address' },
+                          city: editedField.addressConfig?.city || { enabled: false, label: 'City' },
+                          state: editedField.addressConfig?.state || { enabled: false, label: 'State / Province' },
+                          zip: editedField.addressConfig?.zip || { enabled: false, label: 'ZIP / Postal Code' },
+                          country: editedField.addressConfig?.country || { enabled: false, label: 'Country' },
+                          [fieldName]: {
+                            ...editedField.addressConfig?.[fieldName as keyof typeof editedField.addressConfig],
+                            label: e.target.value
+                          }
+                        }
+                      })}
+                      placeholder={`${fieldName} label`}
+                      className="flex-1"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(editedField.type === 'divider' || editedField.type === 'header' || editedField.type === 'richtext') && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Content</Label>
+            <Textarea
+              value={editedField.content || ''}
+              onChange={(e) => setEditedField({ ...editedField, content: e.target.value })}
+              placeholder={
+                editedField.type === 'divider' ? 'Section title' :
+                editedField.type === 'header' ? 'Header text' :
+                'Rich text content (HTML supported)'
+              }
+              rows={editedField.type === 'richtext' ? 6 : 3}
+            />
+            {editedField.type === 'richtext' && (
+              <p className="text-xs text-gray-500">
+                You can use HTML tags like &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, etc.
+              </p>
+            )}
+          </div>
+        )}
+
+        {editedField.type === 'switch' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Switch Settings</Label>
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="defaultValue" className="text-xs">Default State</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={Boolean(editedField.defaultValue)}
+                    onCheckedChange={(checked) => setEditedField({ ...editedField, defaultValue: checked })}
+                  />
+                  <Label className="text-sm">
+                    {editedField.defaultValue ? 'Checked by default' : 'Unchecked by default'}
+                  </Label>
+                </div>
               </div>
             </div>
           </div>

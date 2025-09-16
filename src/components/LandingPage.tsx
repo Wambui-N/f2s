@@ -85,7 +85,7 @@ export default function LandingPage() {
                 <CardContent className="p-0">
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-8">
                     <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
-                      <h3 className="text-lg font-semibold mb-4">Client Consultation Form</h3>
+                      <h3 className="text-lg font-semibold mb-4">Untitled Form</h3>
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>

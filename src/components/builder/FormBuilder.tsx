@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FieldTypes, FormField, FormData, ConditionalRule } from './types';
 import { FormFieldElement } from './FormFieldElement';
+import { FormPreview } from './FormPreview';
 import { InlineEditableTitle } from './InlineEditableTitle';
 import { FieldSettingsPanel } from './FieldSettingsPanel';
 import { FormTemplates } from './FormTemplates';
@@ -27,9 +28,71 @@ import {
   Settings,
   Send,
   ChevronRight,
+  Type,
+  Mail,
+  Phone,
+  Link,
+  FileText,
+  Hash,
+  ToggleLeft,
+  List,
+  Circle,
+  CheckSquare,
+  Calendar,
+  Star,
+  MapPin,
+  Minus,
+  AlignLeft,
+  EyeOff,
+  Upload,
+  Image as ImageIcon,
+  Heading1,
 } from 'lucide-react';
 import { useFormStore } from '@/store/formStore';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { supabase } from '@/lib/supabase';
+import { Save } from 'lucide-react';
+
+interface FieldButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+  preview: React.ReactNode;
+}
+
+function FieldButton({ icon, label, description, onClick, preview }: FieldButtonProps) {
+  const [showPreview, setShowPreview] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setShowPreview(true)}
+        onMouseLeave={() => setShowPreview(false)}
+        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 group"
+      >
+        <div className="flex-shrink-0 text-gray-500 group-hover:text-gray-700">
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-sm text-gray-900">{label}</div>
+          <div className="text-xs text-gray-500 truncate">{description}</div>
+        </div>
+      </button>
+      
+      {/* Hover Preview Tooltip */}
+      {showPreview && (
+        <div className="absolute left-full top-0 ml-2 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-64">
+          <div className="text-xs font-medium text-gray-700 mb-2">Preview:</div>
+          <div className="pointer-events-none">
+            {preview}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function FormBuilder({ onBack }: { onBack: () => void }) {
   const {
@@ -58,6 +121,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPublishFlow, setShowPublishFlow] = useState(false);
   const [activeTab, setActiveTab] = useState<'preview' | 'logic' | 'mapping'>('preview');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const {
     currentState: undoRedoCurrentState,
@@ -67,6 +131,39 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
     canUndo,
     canRedo,
   } = useUndoRedo(formData);
+
+  // Debounced auto-save effect
+  useEffect(() => {
+    // Don't save the initial default form data until it's changed
+    if (formData.title === 'Untitled Form' && formData.fields.length === 3) {
+      return;
+    }
+
+    setSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      if (formData.id) {
+        const { error } = await supabase
+          .from('forms')
+          .update({ 
+            form_data: formData,
+            title: formData.title,
+            description: formData.description 
+          })
+          .eq('id', formData.id);
+
+        if (error) {
+          console.error('Error auto-saving form:', error);
+          setSaveStatus('idle'); // Or an error state
+        } else {
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        }
+      }
+    }, 1500); // 1.5-second debounce delay
+
+    return () => clearTimeout(timer);
+  }, [formData]);
+
 
   useEffect(() => {
     const el = ref.current;
@@ -109,18 +206,252 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
           </div>
 
           {rightSidebar === 'fields' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" onClick={() => addField('text')} className="h-12">Text</Button>
-                <Button variant="outline" onClick={() => addField('email')} className="h-12">Email</Button>
-                <Button variant="outline" onClick={() => addField('phone')} className="h-12">Phone</Button>
-                <Button variant="outline" onClick={() => addField('textarea')} className="h-12">Textarea</Button>
-                <Button variant="outline" onClick={() => addField('select')} className="h-12">Select</Button>
-                <Button variant="outline" onClick={() => addField('number')} className="h-12">Number</Button>
-                <Button variant="outline" onClick={() => addField('date')} className="h-12">Date</Button>
-                <Button variant="outline" onClick={() => addField('radio')} className="h-12">Radio</Button>
-                <Button variant="outline" onClick={() => addField('checkbox')} className="h-12">Checkbox</Button>
-                <Button variant="outline" onClick={() => addField('file')} className="h-12">File</Button>
+            <div className="space-y-6">
+              {/* Input Fields */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Type className="w-4 h-4 mr-2" />
+                  Input Fields
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <FieldButton
+                    icon={<Type className="w-4 h-4" />}
+                    label="Text"
+                    description="Single line text input"
+                    onClick={() => addField('text')}
+                    preview={<input type="text" placeholder="Enter text..." className="w-full px-3 py-2 border rounded-md text-sm" />}
+                  />
+                  <FieldButton
+                    icon={<Mail className="w-4 h-4" />}
+                    label="Email"
+                    description="Email address input"
+                    onClick={() => addField('email')}
+                    preview={<input type="email" placeholder="name@example.com" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                  />
+                  <FieldButton
+                    icon={<Phone className="w-4 h-4" />}
+                    label="Phone"
+                    description="Phone number input"
+                    onClick={() => addField('phone')}
+                    preview={<input type="tel" placeholder="+1 (555) 123-4567" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                  />
+                  <FieldButton
+                    icon={<Link className="w-4 h-4" />}
+                    label="URL"
+                    description="Website URL input"
+                    onClick={() => addField('url')}
+                    preview={<input type="url" placeholder="https://example.com" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                  />
+                  <FieldButton
+                    icon={<FileText className="w-4 h-4" />}
+                    label="Textarea"
+                    description="Multi-line text input"
+                    onClick={() => addField('textarea')}
+                    preview={<textarea placeholder="Enter message..." className="w-full px-3 py-2 border rounded-md text-sm h-16 resize-none" />}
+                  />
+                  <FieldButton
+                    icon={<Hash className="w-4 h-4" />}
+                    label="Number"
+                    description="Numeric input"
+                    onClick={() => addField('number')}
+                    preview={<input type="number" placeholder="123" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                  />
+                </div>
+              </div>
+
+              {/* Choice Fields */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Circle className="w-4 h-4 mr-2" />
+                  Choice Fields
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <FieldButton
+                    icon={<List className="w-4 h-4" />}
+                    label="Select"
+                    description="Dropdown selection"
+                    onClick={() => addField('select')}
+                    preview={
+                      <select className="w-full px-3 py-2 border rounded-md text-sm">
+                        <option>Choose option...</option>
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                      </select>
+                    }
+                  />
+                  <FieldButton
+                    icon={<Circle className="w-4 h-4" />}
+                    label="Radio"
+                    description="Single choice selection"
+                    onClick={() => addField('radio')}
+                    preview={
+                      <div className="space-y-1">
+                        <label className="flex items-center text-sm">
+                          <input type="radio" name="preview" className="mr-2" />
+                          Option 1
+                        </label>
+                        <label className="flex items-center text-sm">
+                          <input type="radio" name="preview" className="mr-2" />
+                          Option 2
+                        </label>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<CheckSquare className="w-4 h-4" />}
+                    label="Checkbox"
+                    description="Multiple choice selection"
+                    onClick={() => addField('checkbox')}
+                    preview={
+                      <div className="space-y-1">
+                        <label className="flex items-center text-sm">
+                          <input type="checkbox" className="mr-2" />
+                          Option 1
+                        </label>
+                        <label className="flex items-center text-sm">
+                          <input type="checkbox" className="mr-2" />
+                          Option 2
+                        </label>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<Star className="w-4 h-4" />}
+                    label="Rating"
+                    description="Star or scale rating"
+                    onClick={() => addField('rating')}
+                    preview={
+                      <div className="flex items-center space-x-1">
+                        {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />)}
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<ToggleLeft className="w-4 h-4" />}
+                    label="Switch"
+                    description="Toggle on/off"
+                    onClick={() => addField('switch')}
+                    preview={
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-4 bg-gray-300 rounded-full relative">
+                          <div className="w-3 h-3 bg-white rounded-full absolute top-0.5 left-0.5"></div>
+                        </div>
+                        <span className="text-sm">Toggle option</span>
+                      </div>
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Upload Fields */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Fields
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <FieldButton
+                    icon={<Upload className="w-4 h-4" />}
+                    label="File Upload"
+                    description="Upload any file type"
+                    onClick={() => addField('file')}
+                    preview={
+                      <div className="border-2 border-dashed border-gray-300 rounded-md p-3 text-center">
+                        <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                        <p className="text-xs text-gray-500">Click to upload</p>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<ImageIcon className="w-4 h-4" />}
+                    label="Image Upload"
+                    description="Upload images only"
+                    onClick={() => addField('image')}
+                    preview={
+                      <div className="border-2 border-dashed border-gray-300 rounded-md p-3 text-center">
+                        <ImageIcon className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                        <p className="text-xs text-gray-500">Upload image</p>
+                      </div>
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Special Fields */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Special Fields
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <FieldButton
+                    icon={<MapPin className="w-4 h-4" />}
+                    label="Address"
+                    description="Complete address form"
+                    onClick={() => addField('address')}
+                    preview={
+                      <div className="space-y-2">
+                        <input placeholder="Street Address" className="w-full px-2 py-1 border rounded text-xs" />
+                        <div className="grid grid-cols-2 gap-1">
+                          <input placeholder="City" className="px-2 py-1 border rounded text-xs" />
+                          <input placeholder="State" className="px-2 py-1 border rounded text-xs" />
+                        </div>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<Calendar className="w-4 h-4" />}
+                    label="Date"
+                    description="Date picker"
+                    onClick={() => addField('date')}
+                    preview={<input type="date" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                  />
+                  <FieldButton
+                    icon={<Heading1 className="w-4 h-4" />}
+                    label="Header"
+                    description="Section title/heading"
+                    onClick={() => addField('header')}
+                    preview={
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Section Title</h3>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<Minus className="w-4 h-4" />}
+                    label="Divider"
+                    description="Section separator"
+                    onClick={() => addField('divider')}
+                    preview={
+                      <div>
+                        <p className="text-sm font-medium">Section Title</p>
+                        <div className="border-t mt-1"></div>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<AlignLeft className="w-4 h-4" />}
+                    label="Text Block"
+                    description="Rich text content"
+                    onClick={() => addField('richtext')}
+                    preview={
+                      <div className="prose prose-sm max-w-none">
+                        <p className="text-sm">Add instructions or information here...</p>
+                      </div>
+                    }
+                  />
+                  <FieldButton
+                    icon={<EyeOff className="w-4 h-4" />}
+                    label="Hidden"
+                    description="Hidden form field"
+                    onClick={() => addField('hidden')}
+                    preview={
+                      <div className="bg-gray-100 rounded px-2 py-1 text-xs text-gray-500 italic">
+                        Hidden field (not visible to users)
+                      </div>
+                    }
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -173,6 +504,18 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               onSave={updateFormTitle}
               className="text-lg font-medium"
             />
+             {saveStatus === 'saving' && (
+              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                <Save size={12} className="animate-spin" />
+                <span>Saving...</span>
+              </div>
+            )}
+            {saveStatus === 'saved' && (
+              <div className="flex items-center space-x-1 text-sm text-green-600">
+                <Save size={12} />
+                <span>Saved</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -265,22 +608,34 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             </CardHeader>
             <CardContent className="h-full overflow-y-auto">
               {activeTab === 'preview' && (
-                <div ref={ref} className={`space-y-4 ${isDraggingOver ? 'bg-muted/40 rounded-md p-4' : ''}`}>
-                  {formData.description && (
-                    <div className="text-gray-600 mb-4 p-4 bg-gray-50 rounded-md">
-                      {formData.description}
-                    </div>
-                  )}
-                  {formData.fields.map((field: FormField, index: number) => (
-                    <FormFieldElement
-                      key={field.id}
-                      field={field}
-                      index={index}
-                      onEdit={setSelectedField}
-                      onDelete={deleteField}
-                      isSelected={selectedField?.id === field.id}
+                <div className="space-y-4">
+                  <div className="bg-white p-6 rounded-lg border">
+                    <FormPreview 
+                      formData={formData} 
+                      isPreview={true}
+                      onSubmit={(data) => {
+                        console.log('Form submitted:', data);
+                        alert('Form submitted successfully! (Preview mode)');
+                      }}
                     />
-                  ))}
+                  </div>
+                  
+                  {/* Builder view for editing */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4">Form Builder</h3>
+                    <div ref={ref} className={`space-y-4 ${isDraggingOver ? 'bg-muted/40 rounded-md p-4' : ''}`}>
+                      {formData.fields.map((field: FormField, index: number) => (
+                        <FormFieldElement
+                          key={field.id}
+                          field={field}
+                          index={index}
+                          onEdit={setSelectedField}
+                          onDelete={deleteField}
+                          isSelected={selectedField?.id === field.id}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
               {activeTab === 'logic' && (
