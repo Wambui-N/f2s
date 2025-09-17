@@ -6,15 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { FormField } from "./types";
-import { GripVertical, Edit2, Trash2, Star, Heart, Circle } from "lucide-react";
+import {
+  GripVertical,
+  Edit2,
+  Trash2,
+  Star,
+  Heart,
+  Circle,
+  Copy,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
+import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 
 interface FormFieldElementProps {
   field: FormField;
   index: number;
   onEdit?: (field: FormField) => void;
   onDelete?: (fieldId: string) => void;
+  onDuplicate?: (field: FormField) => void;
+  onMoveUp?: (index: number) => void;
+  onMoveDown?: (index: number) => void;
   isSelected?: boolean;
 }
 
@@ -23,10 +38,14 @@ export function FormFieldElement({
   index,
   onEdit,
   onDelete,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
   isSelected,
 }: FormFieldElementProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -236,18 +255,34 @@ export function FormFieldElement({
   // Hide label for structural elements
   const showLabel = !["divider", "header", "richtext"].includes(field.type);
 
+  const fieldDescriptionId = `field-${field.id}-description`;
+
   return (
     <div
       ref={ref}
-      className={`${isDragging ? "opacity-50 scale-105" : ""} ${isSelected ? "ring-2 ring-blue-500 rounded-lg" : ""} group`}
+      className={`relative ${isDragging ? "opacity-50 scale-105" : ""} ${
+        isSelected ? "ring-2 ring-blue-500 rounded-lg" : ""
+      } group`}
       onClick={() => onEdit?.(field)}
+      aria-describedby={fieldDescriptionId}
     >
+      <span id={fieldDescriptionId} className="sr-only">
+        {`Field: ${field.label}. Use the buttons to move or edit this field.`}
+      </span>
       <Card
-        className={`p-4 bg-background hover:shadow-md transition-all duration-200 cursor-pointer ${isSelected ? "bg-blue-50 border-blue-200" : "hover:border-gray-300"} group-hover:shadow-lg`}
+        className={`p-4 bg-background hover:shadow-md transition-all duration-200 cursor-pointer ${
+          isSelected
+            ? "bg-blue-50 border-blue-200"
+            : "hover:border-gray-300"
+        } group-hover:shadow-lg`}
+        onClick={() => onEdit?.(field)}
       >
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center">
-            <button className="cursor-grab p-2 text-muted-foreground hover:bg-muted rounded-md transition-colors group-hover:text-gray-600">
+            <button
+              className="cursor-grab p-2 text-muted-foreground hover:bg-muted rounded-md transition-colors group-hover:text-gray-600"
+              aria-label={`Drag to reorder ${field.label} field`}
+            >
               <GripVertical size={16} />
             </button>
             {field.required && showLabel && (
@@ -260,7 +295,47 @@ export function FormFieldElement({
                 <label className="font-semibold text-sm text-gray-700">
                   {field.label}
                 </label>
-                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div
+                  className={`flex items-center space-x-1 transition-opacity ${
+                    isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  }`}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicate?.(field);
+                    }}
+                    className="h-6 w-6 p-0"
+                    aria-label="Duplicate field"
+                  >
+                    <Copy size={12} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveUp?.(index);
+                    }}
+                    className="h-6 w-6 p-0"
+                    aria-label="Move field up"
+                  >
+                    <ArrowUp size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveDown?.(index);
+                    }}
+                    className="h-6 w-6 p-0"
+                    aria-label="Move field down"
+                  >
+                    <ArrowDown size={14} />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -269,8 +344,21 @@ export function FormFieldElement({
                       onEdit?.(field);
                     }}
                     className="h-6 w-6 p-0"
+                    aria-label="Edit field"
                   >
                     <Edit2 size={12} />
+                  </Button>
+                   <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete?.(field.id);
+                    }}
+                    className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                    aria-label="Delete field"
+                  >
+                    <Trash2 size={12} />
                   </Button>
                 </div>
               </div>
@@ -284,6 +372,9 @@ export function FormFieldElement({
           </div>
         </div>
       </Card>
+      {isDragOver && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 rounded-full" />
+      )}
     </div>
   );
 }

@@ -172,10 +172,10 @@ export function IntegrationsPanel({
     // Fetch user's existing connections to offer them as choices
     const { data } = await supabase
       .from("sheet_connections")
-      .select("id, sheet_name")
+      .select("*")
       .eq("user_id", user?.id);
 
-    setExistingConnections(data || []);
+    setExistingConnections((data as SheetConnection[]) || []);
     setShowConnectOptions(true);
   };
 

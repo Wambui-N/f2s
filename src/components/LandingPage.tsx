@@ -144,8 +144,9 @@ export default function LandingPage() {
                 onClick={() =>
                   document
                     .getElementById("features")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                aria-label="Scroll to the features section to see how FormToSheets works"
               >
                 See How It Works
               </Button>
@@ -233,7 +234,11 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card>
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div
+                  className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                  role="img"
+                  aria-label="An icon representing data flowing directly into a spreadsheet."
+                >
                   <svg
                     className="w-8 h-8 text-blue-600"
                     fill="none"
@@ -261,7 +266,11 @@ export default function LandingPage() {
 
             <Card>
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div
+                  className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                  role="img"
+                  aria-label="An icon representing a professional and trustworthy design."
+                >
                   <svg
                     className="w-8 h-8 text-purple-600"
                     fill="none"
@@ -289,7 +298,11 @@ export default function LandingPage() {
 
             <Card>
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div
+                  className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                  role="img"
+                  aria-label="An icon representing that the forms work anywhere, on any device."
+                >
                   <svg
                     className="w-8 h-8 text-green-600"
                     fill="none"

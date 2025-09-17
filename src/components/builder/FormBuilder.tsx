@@ -58,6 +58,13 @@ import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { supabase } from "@/lib/supabase";
 import { Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface FieldButtonProps {
   icon: React.ReactNode;
@@ -131,6 +138,10 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPublishFlow, setShowPublishFlow] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [testSubmissionResult, setTestSubmissionResult] = useState<string | null>(
+    null
+  );
   const [activeTab, setActiveTab] = useState<
     "builder" | "logic" | "integrations" | "submissions"
   >("builder");
@@ -213,6 +224,13 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
     return () => clearTimeout(timer);
   }, [formData, user]);
 
+  // Wrapper for actions that should be undoable
+  const handleUndoableAction = (action: (formData: FormData) => FormData) => {
+    const newFormData = action(formData);
+    useFormStore.setState({ formData: newFormData });
+    saveUndoRedoState(newFormData);
+  };
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -223,12 +241,45 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
       onDragLeave: () => setIsDraggingOver(false),
       onDrop: ({ source }) => {
         const startIndex = source.data.index as number;
-        const finishIndex = formData.fields.length;
+        if (startIndex === undefined) return;
+        const closest = Array.from(
+          el.querySelectorAll('[data-field-id]')
+        ).find(
+          (el) =>
+            el.getBoundingClientRect().top > source.location.current.input.clientY
+        );
+        const finishIndex = closest
+          ? Array.from(el.querySelectorAll('[data-field-id]')).indexOf(closest)
+          : formData.fields.length;
+
         moveField(startIndex, finishIndex);
         setIsDraggingOver(false);
       },
     });
   }, [formData.fields, moveField]);
+
+  const handleMoveFieldUp = (index: number) => {
+    if (index > 0) {
+      handleUndoableAction((currentData) => {
+        const newFields = [...currentData.fields];
+        const [removed] = newFields.splice(index, 1);
+        newFields.splice(index - 1, 0, removed);
+        return { ...currentData, fields: newFields };
+      });
+    }
+  };
+
+  const handleMoveFieldDown = (index: number) => {
+    if (index < formData.fields.length - 1) {
+      handleUndoableAction((currentData) => {
+        const newFields = [...currentData.fields];
+        const [removed] = newFields.splice(index, 1);
+        newFields.splice(index + 1, 0, removed);
+        return { ...currentData, fields: newFields };
+      });
+    }
+  };
+
 
   const handleSyncHeaders = async () => {
     // Simulate API call to get sheet headers
@@ -653,15 +704,6 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               <Palette size={16} />
               <span>Design</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveTab("builder")}
-              className="flex items-center space-x-2"
-            >
-              <Eye size={16} />
-              <span>Builder</span>
-            </Button>
             <UndoRedoButtons
               canUndo={canUndo}
               canRedo={canRedo}
@@ -752,42 +794,15 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
 
       <div className="flex h-[calc(100vh-80px)]">
         <div className="flex-1 p-6">
-          <Card className="h-full">
-            <CardHeader className="pb-4">
-              <div className="flex space-x-1">
-                <Button
-                  variant={activeTab === "builder" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveTab("builder")}
-                >
-                  Builder
-                </Button>
-                <Button
-                  variant={activeTab === "logic" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveTab("logic")}
-                >
-                  Logic
-                </Button>
-                <Button
-                  variant={activeTab === "integrations" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveTab("integrations")}
-                >
-                  Integrations
-                </Button>
-                <Button
-                  variant={activeTab === "submissions" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveTab("submissions")}
-                >
-                  Submissions
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="h-full overflow-y-auto">
-              {activeTab === "builder" && (
-                <div className="space-y-4">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-full flex flex-col">
+            <TabsList className="mb-4">
+              <TabsTrigger value="builder">Builder</TabsTrigger>
+              <TabsTrigger value="logic">Logic</TabsTrigger>
+              <TabsTrigger value="integrations">Integrations</TabsTrigger>
+              <TabsTrigger value="submissions">Submissions</TabsTrigger>
+            </TabsList>
+            <TabsContent value="builder" className="flex-grow">
+               <div className="space-y-4 h-full overflow-y-auto">
                   <FormPreview
                     formData={formData}
                     isPreview={true}
@@ -802,7 +817,9 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     <h3 className="text-lg font-semibold mb-4">Form Fields</h3>
                     <div
                       ref={ref}
-                      className={`space-y-4 ${isDraggingOver ? "bg-muted/40 rounded-md p-4" : ""}`}
+                      className={`space-y-4 ${
+                        isDraggingOver ? "bg-muted/40 rounded-md p-4" : ""
+                      }`}
                     >
                       {formData.fields.map(
                         (field: FormField, index: number) => (
@@ -811,24 +828,49 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                             field={field}
                             index={index}
                             onEdit={setSelectedField}
-                            onDelete={deleteField}
+                            onDelete={(fieldId) =>
+                              handleUndoableAction((currentData) => ({
+                                ...currentData,
+                                fields: currentData.fields.filter(
+                                  (f) => f.id !== fieldId
+                                ),
+                              }))
+                            }
+                            onDuplicate={(fieldToDuplicate) =>
+                              handleUndoableAction((currentData) => {
+                                const newFields = [...currentData.fields];
+                                const index = newFields.findIndex(
+                                  (f) => f.id === fieldToDuplicate.id
+                                );
+                                if (index > -1) {
+                                  newFields.splice(index + 1, 0, {
+                                    ...fieldToDuplicate,
+                                    id: `field_${Date.now()}`,
+                                    label: `${fieldToDuplicate.label} (Copy)`,
+                                  });
+                                }
+                                return { ...currentData, fields: newFields };
+                              })
+                            }
+                            onMoveUp={handleMoveFieldUp}
+                            onMoveDown={handleMoveFieldDown}
                             isSelected={selectedField?.id === field.id}
                           />
-                        ),
+                        )
                       )}
                     </div>
                   </div>
                 </div>
-              )}
-              {activeTab === "logic" && (
-                <ConditionalLogic
+            </TabsContent>
+            <TabsContent value="logic" className="flex-grow">
+              <ConditionalLogic
                   fields={formData.fields}
                   rules={conditionalRules}
                   onUpdateRules={setConditionalRules}
                 />
-              )}
-              {activeTab === "integrations" && (
-                <IntegrationsPanel
+            </TabsContent>
+            <TabsContent value="integrations" className="flex-grow">
+              <IntegrationsPanel
                   key={formVersion}
                   formData={formData}
                   onConnectionUpdate={() => {
@@ -836,12 +878,11 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     setFormVersion((v) => v + 1);
                   }}
                 />
-              )}
-              {activeTab === "submissions" && (
-                <SubmissionsPanel key={formVersion} formData={formData} />
-              )}
-            </CardContent>
-          </Card>
+            </TabsContent>
+            <TabsContent value="submissions" className="flex-grow">
+              <SubmissionsPanel key={formVersion} formData={formData} />
+            </TabsContent>
+          </Tabs>
         </div>
 
         {selectedField && (
@@ -870,7 +911,75 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
         <PublishFlow
           formData={formData}
           onClose={() => setShowPublishFlow(false)}
+          onTest={() => {
+            setShowPublishFlow(false);
+            setIsTestMode(true);
+          }}
         />
+      )}
+
+      {isTestMode && (
+        <Dialog open={isTestMode} onOpenChange={setIsTestMode}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Test Form Submission</DialogTitle>
+              <DialogDescription>
+                This is a preview of your live form. The fields have been
+                pre-filled with mock data.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 max-h-[70vh] overflow-y-auto">
+              <FormPreview
+                formData={formData}
+                isTestMode={true}
+                onSubmit={async (data) => {
+                  try {
+                    const response = await fetch(
+                      `/api/forms/${formData.id}/submit`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ formData: data }),
+                      }
+                    );
+                    const result = await response.json();
+                    setTestSubmissionResult(
+                      `Status: ${response.status}\n\n${JSON.stringify(
+                        result,
+                        null,
+                        2
+                      )}`
+                    );
+                  } catch (error) {
+                    setTestSubmissionResult(
+                      `Error: ${(error as Error).message}`
+                    );
+                  }
+                }}
+              />
+
+              {testSubmissionResult && (
+                <div className="mt-6">
+                  <h3 className="font-semibold mb-2">Server Response:</h3>
+                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
+                    {testSubmissionResult}
+                  </pre>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsTestMode(false);
+                  setTestSubmissionResult(null);
+                }}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

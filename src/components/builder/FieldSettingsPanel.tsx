@@ -37,9 +37,14 @@ export function FieldSettingsPanel({
   const { updateField, deleteField, duplicateField, moveField, formData } =
     useFormStore();
   const [editedField, setEditedField] = useState<FormField | null>(field);
+  const labelInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setEditedField(field);
+    if (field && labelInputRef.current) {
+      // Focus the label input when a new field is selected
+      setTimeout(() => labelInputRef.current?.focus(), 0);
+    }
   }, [field]);
 
   if (!editedField) {
@@ -163,6 +168,7 @@ export function FieldSettingsPanel({
               Field Label
             </Label>
             <Input
+              ref={labelInputRef}
               id="label"
               value={editedField.label}
               onChange={(e) =>

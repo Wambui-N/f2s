@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormData, FormField } from "./types";
 import { Smartphone, Monitor, RefreshCw, Play } from "lucide-react";
+import { generateMockData } from "@/lib/mockData";
 
 interface FormPreviewProps {
   formData: FormData;
   isPreview?: boolean;
+  isTestMode?: boolean;
   onSampleData?: () => void;
   onSubmit?: (data: Record<string, any>) => void;
 }
@@ -16,6 +18,7 @@ interface FormPreviewProps {
 export function FormPreview({
   formData,
   isPreview = false,
+  isTestMode = false,
   onSampleData,
   onSubmit,
 }: FormPreviewProps) {
@@ -23,6 +26,12 @@ export function FormPreview({
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isTestMode) {
+      setFormValues(generateMockData(formData.fields));
+    }
+  }, [isTestMode, formData.fields]);
 
   const generateSampleData = () => {
     const sample: Record<string, any> = {};

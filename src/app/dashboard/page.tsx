@@ -14,6 +14,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Plus,
   FileText,
   BarChart3,
@@ -329,35 +335,59 @@ function DashboardContent() {
 
         {/* Quick Actions */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Analytics</h3>
-              <p className="text-sm text-muted-foreground">
-                View detailed submission analytics and insights
-              </p>
-            </CardContent>
-          </Card>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/dashboard/analytics" aria-disabled="true">
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow opacity-50">
+                    <CardContent className="p-6 text-center">
+                      <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                      <h3 className="font-semibold mb-2">Analytics</h3>
+                      <p className="text-sm text-muted-foreground">
+                        View detailed submission analytics and insights
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Not available in beta</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <Settings className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Settings</h3>
-              <p className="text-sm text-muted-foreground">
-                Configure your Google Sheets integration
-              </p>
-            </CardContent>
-          </Card>
+          <Link href="/settings">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6 text-center">
+                <Settings className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">Settings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Configure your Google Sheets integration
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <ExternalLink className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">Help & Support</h3>
-              <p className="text-sm text-muted-foreground">
-                Get help with forms and Google Sheets setup
-              </p>
-            </CardContent>
-          </Card>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/support" aria-disabled="true">
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow opacity-50">
+                    <CardContent className="p-6 text-center">
+                      <ExternalLink className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                      <h3 className="font-semibold mb-2">Help & Support</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Get help with forms and Google Sheets setup
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Not available in beta</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </main>
       <CreateFormModal

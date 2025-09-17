@@ -16,14 +16,15 @@ import { Input } from "@/components/ui/input";
 import { FormData } from "./types";
 import { useFormStore } from "@/store/formStore";
 import { supabase } from "@/lib/supabase";
-import { Copy, Check, Share2 } from "lucide-react";
+import { Copy, Check, Share2, Code, TestTube2 } from "lucide-react";
 
 interface PublishFlowProps {
   formData: FormData;
   onClose: () => void;
+  onTest: () => void;
 }
 
-export function PublishFlow({ formData, onClose }: PublishFlowProps) {
+export function PublishFlow({ formData, onClose, onTest }: PublishFlowProps) {
   const { updateFormStatus } = useFormStore();
   const [isPublished, setIsPublished] = useState(
     formData.status === "published",
@@ -104,6 +105,25 @@ export function PublishFlow({ formData, onClose }: PublishFlowProps) {
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {isPublished && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => alert("Embed code copied! (Not implemented)")}
+                >
+                  <Code className="w-4 h-4 mr-2" />
+                  Get Embed Code
+                </Button>
+                <Button variant="outline" className="w-full" onClick={onTest}>
+                  <TestTube2 className="w-4 h-4 mr-2" />
+                  Test Form
                 </Button>
               </div>
             </div>

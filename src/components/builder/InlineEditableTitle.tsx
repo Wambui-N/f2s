@@ -120,6 +120,19 @@ export function InlineEditableTitle({
         >
           <X size={14} />
         </Button>
+
+        {saveStatus === "saving" && (
+          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+            <Save size={12} className="animate-spin" />
+            <span>Saving...</span>
+          </div>
+        )}
+        {saveStatus === "saved" && (
+          <div className="flex items-center space-x-1 text-sm text-green-600">
+            <Check size={12} />
+            <span>Saved</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -135,18 +148,6 @@ export function InlineEditableTitle({
       >
         <Edit2 size={14} />
       </Button>
-      {saveStatus === "saving" && (
-        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-          <Save size={12} className="animate-spin" />
-          <span>Saving...</span>
-        </div>
-      )}
-      {saveStatus === "saved" && (
-        <div className="flex items-center space-x-1 text-sm text-green-600">
-          <Check size={12} />
-          <span>Saved</span>
-        </div>
-      )}
     </div>
   );
 }
