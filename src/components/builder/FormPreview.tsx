@@ -8,12 +8,16 @@ import { Smartphone, Monitor, RefreshCw, Play } from 'lucide-react';
 
 interface FormPreviewProps {
   formData: FormData;
+  isPreview?: boolean;
   onSampleData?: () => void;
+  onSubmit?: (data: Record<string, any>) => void;
 }
 
-export function FormPreview({ formData, onSampleData }: FormPreviewProps) {
+export function FormPreview({ formData, isPreview = false, onSampleData, onSubmit }: FormPreviewProps) {
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [sampleData, setSampleData] = useState<Record<string, any>>({});
+  const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
   const generateSampleData = () => {
     const sample: Record<string, any> = {};
@@ -57,44 +61,116 @@ export function FormPreview({ formData, onSampleData }: FormPreviewProps) {
       }
     });
     
-    setSampleData(sample);
+    setFormValues(sample);
     onSampleData?.();
   };
 
+  const handleInputChange = (fieldId: string, value: any) => {
+    setFormValues(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isPreview) {
+      // In preview mode, just call the onSubmit callback
+      onSubmit?.(formValues);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+
+    try {
+      // Create field mappings (fieldId -> field label)
+      const fieldMappings: Record<string, string> = {};
+      formData.fields.forEach(field => {
+        if (field.type !== 'divider' && field.type !== 'header' && field.type !== 'richtext') {
+          fieldMappings[field.id] = field.label;
+        }
+      });
+
+      const response = await fetch(`/api/forms/${formData.id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          formData: formValues,
+          fieldMappings,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitMessage(result.synced ? 
+          `✅ ${result.message}` : 
+          `⚠️ ${result.message}`
+        );
+        setFormValues({}); // Reset form
+      } else {
+        setSubmitMessage(`❌ ${result.error || 'Submission failed'}`);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmitMessage('❌ Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderField = (field: FormField) => {
-    const value = sampleData[field.id] || field.defaultValue || '';
+    const value = formValues[field.id] || field.defaultValue || '';
+    
+    // Skip non-input fields
+    if (['divider', 'header', 'richtext'].includes(field.type)) {
+      return null;
+    }
     
     switch (field.type) {
       case 'text':
       case 'email':
       case 'number':
       case 'date':
+      case 'phone':
+      case 'url':
         return (
           <input
-            type={field.type}
+            type={field.type === 'phone' ? 'tel' : field.type}
             value={value}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
             placeholder={field.placeholder}
+            required={field.required}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            readOnly
+            disabled={isPreview && isSubmitting}
           />
         );
       case 'textarea':
         return (
           <textarea
             value={value}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
             placeholder={field.placeholder}
+            required={field.required}
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            readOnly
+            disabled={isPreview && isSubmitting}
           />
         );
       case 'select':
         return (
           <select
             value={value}
+            onChange={(e) => handleInputChange(field.id, e.target.value)}
+            required={field.required}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled
+            disabled={isPreview && isSubmitting}
           >
+            <option value="">Choose an option...</option>
             {field.options?.map((option, index) => (
               <option key={index} value={option}>{option}</option>
             ))}
@@ -110,8 +186,10 @@ export function FormPreview({ formData, onSampleData }: FormPreviewProps) {
                   name={field.id}
                   value={option}
                   checked={value === option}
+                  onChange={(e) => handleInputChange(field.id, e.target.value)}
                   className="text-blue-600"
-                  disabled
+                  disabled={isPreview && isSubmitting}
+                  required={field.required}
                 />
                 <span className="text-sm">{option}</span>
               </label>
@@ -190,26 +268,41 @@ export function FormPreview({ formData, onSampleData }: FormPreviewProps) {
         <div className={`mx-auto ${viewMode === 'mobile' ? 'max-w-sm' : 'max-w-lg'}`}>
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h3 className="text-xl font-semibold mb-6 text-center">{formData.title}</h3>
+            {formData.description && (
+              <p className="text-gray-600 mb-6 text-center">{formData.description}</p>
+            )}
             
-            <form className="space-y-6">
-              {formData.fields.map((field) => (
-                <div key={field.id} className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  {renderField(field)}
-                  {field.helpText && (
-                    <p className="text-xs text-gray-500">{field.helpText}</p>
-                  )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {formData.fields.map((field) => {
+                const fieldElement = renderField(field);
+                if (!fieldElement) return null; // Skip non-input fields
+                
+                return (
+                  <div key={field.id} className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                    {fieldElement}
+                    {field.helpText && (
+                      <p className="text-xs text-gray-500">{field.helpText}</p>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {submitMessage && (
+                <div className="p-4 rounded-lg bg-gray-50 border text-sm">
+                  {submitMessage}
                 </div>
-              ))}
+              )}
               
               <Button 
+                type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled
+                disabled={isSubmitting}
               >
-                {formData.settings.submitText}
+                {isSubmitting ? 'Submitting...' : formData.settings.submitText}
               </Button>
             </form>
           </div>

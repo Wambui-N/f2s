@@ -19,6 +19,9 @@ import {
   Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
+import { CreateFormModal } from '@/components/builder/CreateFormModal';
 
 // The FormData type from the database will be slightly different
 // from the one in the form builder's store.
@@ -31,16 +34,26 @@ interface FormRecord {
   // We'll add submission counts later
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const [forms, setForms] = useState<FormRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchForms = async () => {
+      if (!user) return;
+      
       setLoading(true);
       const { data, error } = await supabase
         .from('forms')
-        .select('id, title, description, created_at, status')
+        .select(`
+          id, title, description, created_at, status,
+          sheet_connections!forms_default_sheet_connection_id_fkey (
+            id, sheet_name, sheet_url, is_active
+          )
+        `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -54,7 +67,7 @@ export default function Dashboard() {
     };
 
     fetchForms();
-  }, []);
+  }, [user]);
 
   const handleDeleteForm = async (formId: string) => {
     // Optimistic deletion
@@ -98,12 +111,18 @@ export default function Dashboard() {
               Manage your forms and track submissions
             </p>
           </div>
-          <Link href="/editor" passHref>
-            <Button size="lg">
+          <div className="flex items-center space-x-3">
+            <Link href="/settings" passHref>
+              <Button variant="outline" size="lg">
+                <Settings size={20} className="mr-2" />
+                Settings
+              </Button>
+            </Link>
+            <Button size="lg" onClick={() => setCreateModalOpen(true)}>
               <Plus size={20} className="mr-2" />
               Create New Form
             </Button>
-          </Link>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -173,12 +192,10 @@ export default function Dashboard() {
                 <p className="text-muted-foreground mb-6">
                   Create your first form to start collecting client information
                 </p>
-                <Link href="/editor" passHref>
-                  <Button>
-                    <Plus size={16} className="mr-2" />
-                    Create Your First Form
-                  </Button>
-                </Link>
+                <Button onClick={() => setCreateModalOpen(true)}>
+                  <Plus size={16} className="mr-2" />
+                  Create Your First Form
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -193,6 +210,14 @@ export default function Dashboard() {
                         <Badge variant={form.status === 'published' ? 'default' : 'secondary'}>
                           {form.status}
                         </Badge>
+                        {form.sheet_connections && (
+                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Google Sheets
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
                         {form.description}
@@ -210,6 +235,17 @@ export default function Dashboard() {
                     </div>
                     
                     <div className="flex items-center space-x-2">
+                      {form.sheet_connections && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(form.sheet_connections.sheet_url, '_blank')}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <ExternalLink size={14} className="mr-1" />
+                          Sheet
+                        </Button>
+                      )}
                       <Link href={`/editor/${form.id}`} passHref>
                         <Button
                           variant="outline"
@@ -275,6 +311,18 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+      <CreateFormModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setCreateModalOpen(false)} 
+      />
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

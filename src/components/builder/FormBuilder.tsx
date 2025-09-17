@@ -17,6 +17,8 @@ import { SheetMapping } from './SheetMapping';
 import { UndoRedoButtons } from './UndoRedoButtons';
 import { PublishFlow } from './PublishFlow';
 import { DesignPanel } from './DesignPanel';
+import { IntegrationsPanel } from './IntegrationsPanel';
+import { SubmissionsPanel } from './SubmissionsPanel';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { reorder } from '@atlaskit/pragmatic-drag-and-drop/reorder';
 import {
@@ -31,7 +33,7 @@ import {
   Type,
   Mail,
   Phone,
-  Link,
+  Link as LinkIcon,
   FileText,
   Hash,
   ToggleLeft,
@@ -47,11 +49,14 @@ import {
   Upload,
   Image as ImageIcon,
   Heading1,
+  FileStack,
+  GitBranch,
 } from 'lucide-react';
 import { useFormStore } from '@/store/formStore';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { supabase } from '@/lib/supabase';
 import { Save } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FieldButtonProps {
   icon: React.ReactNode;
@@ -95,6 +100,7 @@ function FieldButton({ icon, label, description, onClick, preview }: FieldButton
 }
 
 export function FormBuilder({ onBack }: { onBack: () => void }) {
+  const { user } = useAuth();
   const {
     formData,
     selectedField,
@@ -120,8 +126,9 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPublishFlow, setShowPublishFlow] = useState(false);
-  const [activeTab, setActiveTab] = useState<'preview' | 'logic' | 'mapping'>('preview');
+  const [activeTab, setActiveTab] = useState<'builder' | 'logic' | 'integrations' | 'submissions'>('builder');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [formVersion, setFormVersion] = useState(0);
 
   const {
     currentState: undoRedoCurrentState,
@@ -134,35 +141,65 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
 
   // Debounced auto-save effect
   useEffect(() => {
+    console.log('Auto-save effect triggered:', {
+      title: formData.title,
+      fieldsCount: formData.fields.length,
+      formId: formData.id,
+      hasUser: !!user
+    });
+
     // Don't save the initial default form data until it's changed
     if (formData.title === 'Untitled Form' && formData.fields.length === 3) {
+      console.log('Skipping auto-save: Default form data');
+      return;
+    }
+
+    if (!user) {
+      console.log('Skipping auto-save: No user');
+      return;
+    }
+
+    // Don't try to save if we don't have a valid form ID
+    if (!formData.id || formData.id.startsWith('field_')) {
+      console.log('Skipping auto-save: Invalid or temporary form ID:', formData.id);
       return;
     }
 
     setSaveStatus('saving');
     const timer = setTimeout(async () => {
-      if (formData.id) {
+      try {
         const { error } = await supabase
           .from('forms')
           .update({ 
             form_data: formData,
             title: formData.title,
-            description: formData.description 
+            description: formData.description,
+            updated_at: new Date().toISOString()
           })
-          .eq('id', formData.id);
+          .eq('id', formData.id)
+          .eq('user_id', user.id); // Ensure user owns the form
 
         if (error) {
-          console.error('Error auto-saving form:', error);
-          setSaveStatus('idle'); // Or an error state
+          console.error('Error auto-saving form:', {
+            error,
+            formId: formData.id,
+            userId: user.id,
+            formTitle: formData.title
+          });
+          setSaveStatus('idle');
         } else {
+          console.log('Form auto-saved successfully:', formData.title);
           setSaveStatus('saved');
           setTimeout(() => setSaveStatus('idle'), 2000);
         }
+      } catch (err) {
+        console.error('Auto-save exception:', err);
+        setSaveStatus('idle');
       }
     }, 1500); // 1.5-second debounce delay
 
     return () => clearTimeout(timer);
-  }, [formData]);
+  }, [formData, user]);
 
 
   useEffect(() => {
@@ -236,7 +273,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     preview={<input type="tel" placeholder="+1 (555) 123-4567" className="w-full px-3 py-2 border rounded-md text-sm" />}
                   />
                   <FieldButton
-                    icon={<Link className="w-4 h-4" />}
+                    icon={<LinkIcon className="w-4 h-4" />}
                     label="URL"
                     description="Website URL input"
                     onClick={() => addField('url')}
@@ -540,11 +577,11 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setActiveTab('preview')}
+              onClick={() => setActiveTab('builder')}
               className="flex items-center space-x-2"
             >
               <Eye size={16} />
-              <span>Preview</span>
+              <span>Builder</span>
             </Button>
             <UndoRedoButtons
               canUndo={canUndo}
@@ -558,6 +595,49 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                 if (nextState) useFormStore.setState({ formData: nextState });
               }}
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                console.log('Manual save clicked. Form data:', {
+                  id: formData.id,
+                  title: formData.title,
+                  userId: user?.id
+                });
+                
+                if (!formData.id || formData.id.startsWith('field_')) {
+                  alert('Cannot save: Invalid form ID');
+                  return;
+                }
+                
+                try {
+                  const { error } = await supabase
+                    .from('forms')
+                    .update({ 
+                      form_data: formData,
+                      title: formData.title,
+                      description: formData.description,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', formData.id)
+                    .eq('user_id', user?.id);
+
+                  if (error) {
+                    console.error('Manual save error:', error);
+                    alert('Save failed: ' + JSON.stringify(error));
+                  } else {
+                    alert('Saved successfully!');
+                  }
+                } catch (err) {
+                  console.error('Manual save exception:', err);
+                  alert('Save exception: ' + err);
+                }
+              }}
+              className="flex items-center space-x-2"
+            >
+              <Save size={16} />
+              <span>Manual Save</span>
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -584,11 +664,11 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <CardHeader className="pb-4">
               <div className="flex space-x-1">
                 <Button
-                  variant={activeTab === 'preview' ? 'default' : 'ghost'}
+                  variant={activeTab === 'builder' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setActiveTab('preview')}
+                  onClick={() => setActiveTab('builder')}
                 >
-                  Preview
+                  Builder
                 </Button>
                 <Button
                   variant={activeTab === 'logic' ? 'default' : 'ghost'}
@@ -598,31 +678,36 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                   Logic
                 </Button>
                 <Button
-                  variant={activeTab === 'mapping' ? 'default' : 'ghost'}
+                  variant={activeTab === 'integrations' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setActiveTab('mapping')}
+                  onClick={() => setActiveTab('integrations')}
                 >
-                  Sheet Mapping
+                  Integrations
+                </Button>
+                <Button
+                  variant={activeTab === 'submissions' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('submissions')}
+                >
+                  Submissions
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="h-full overflow-y-auto">
-              {activeTab === 'preview' && (
+              {activeTab === 'builder' && (
                 <div className="space-y-4">
-                  <div className="bg-white p-6 rounded-lg border">
-                    <FormPreview 
-                      formData={formData} 
-                      isPreview={true}
-                      onSubmit={(data) => {
-                        console.log('Form submitted:', data);
-                        alert('Form submitted successfully! (Preview mode)');
-                      }}
-                    />
-                  </div>
+                  <FormPreview 
+                    formData={formData} 
+                    isPreview={true}
+                    onSubmit={(data) => {
+                      console.log('Form submitted:', data);
+                      alert('Form submitted successfully! (Preview mode)');
+                    }}
+                  />
                   
                   {/* Builder view for editing */}
                   <div className="mt-8">
-                    <h3 className="text-lg font-semibold mb-4">Form Builder</h3>
+                    <h3 className="text-lg font-semibold mb-4">Form Fields</h3>
                     <div ref={ref} className={`space-y-4 ${isDraggingOver ? 'bg-muted/40 rounded-md p-4' : ''}`}>
                       {formData.fields.map((field: FormField, index: number) => (
                         <FormFieldElement
@@ -645,14 +730,18 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                   onUpdateRules={setConditionalRules}
                 />
               )}
-              {activeTab === 'mapping' && (
-                <SheetMapping
-                  fields={formData.fields}
-                  sheetHeaders={sheetHeaders}
-                  fieldMappings={fieldMappings}
-                  onUpdateMappings={setFieldMappings}
-                  onSyncHeaders={handleSyncHeaders}
+              {activeTab === 'integrations' && (
+                <IntegrationsPanel 
+                  key={formVersion} 
+                  formData={formData} 
+                  onConnectionUpdate={() => {
+                    // Increment key to force re-mount and data re-fetch
+                    setFormVersion(v => v + 1);
+                  }}
                 />
+              )}
+              {activeTab === 'submissions' && (
+                <SubmissionsPanel key={formVersion} formData={formData} />
               )}
             </CardContent>
           </Card>

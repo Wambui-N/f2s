@@ -1,13 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FormBuilder } from "@/components/builder/FormBuilder";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { Pricing } from "@/components/Pricing";
+import { FAQs } from "@/components/FAQs";
+import { InteractiveDemo } from "@/components/InteractiveDemo";
 
 export default function LandingPage() {
   const [showBuilder, setShowBuilder] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const { user, signInWithGoogle, signOut, loading } = useAuth();
+  const router = useRouter();
+
+  // Handle redirect after successful authentication
+  useEffect(() => {
+    if (user && shouldRedirect && !loading) {
+      setShouldRedirect(false);
+      router.push('/dashboard');
+    }
+  }, [user, shouldRedirect, loading, router]);
+
+  const handleGetStarted = async () => {
+    if (user) {
+      router.push('/dashboard');
+    } else {
+      try {
+        setShouldRedirect(true);
+        await signInWithGoogle();
+      } catch (error) {
+        console.error('Failed to sign in:', error);
+        setShouldRedirect(false);
+      }
+    }
+  };
+
+  const handleTryBuilder = () => {
+    if (user) {
+      setShowBuilder(true);
+    } else {
+      handleGetStarted();
+    }
+  };
 
   if (showBuilder) {
     return <FormBuilder onBack={() => setShowBuilder(false)} />;
@@ -24,13 +62,26 @@ export default function LandingPage() {
                 FormToSheets
               </h1>
             </div>
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
+              <a href="#demo" className="text-gray-600 hover:text-gray-900">Demo</a>
+              <a href="#faqs" className="text-gray-600 hover:text-gray-900">FAQs</a>
+            </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => window.open('/dashboard', '_blank')}>
-                Dashboard
-              </Button>
-              <Button onClick={() => setShowBuilder(true)}>
-                Get Beta Access
-              </Button>
+              {user ? (
+                <Button onClick={() => router.push('/dashboard')}>
+                  Dashboard
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={handleGetStarted} disabled={loading}>
+                    {loading ? 'Loading...' : 'Sign In'}
+                  </Button>
+                  <Button onClick={handleGetStarted} disabled={loading}>
+                    {loading ? 'Loading...' : 'Get Started'}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -63,11 +114,12 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <Button
-                onClick={() => setShowBuilder(true)}
+                onClick={handleTryBuilder}
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg font-semibold px-8 py-4"
+                disabled={loading}
               >
-                Create Your First Client Form
+                {user ? 'Create Your First Client Form' : 'Sign In with Google to Start'}
               </Button>
               <Button
                 variant="outline"
@@ -196,6 +248,16 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <div id="pricing">
+        <Pricing />
+      </div>
+      <div id="demo">
+        <InteractiveDemo />
+      </div>
+      <div id="faqs">
+        <FAQs />
+      </div>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -207,11 +269,12 @@ export default function LandingPage() {
             No signup required. Start in 2 minutes.
           </p>
           <Button
-            onClick={() => setShowBuilder(true)}
+            onClick={handleTryBuilder}
             size="lg"
             className="bg-white text-blue-600 hover:bg-gray-100 text-lg font-semibold px-8 py-4"
+            disabled={loading}
           >
-            Create Your Client Form Now
+            {user ? 'Create Your Client Form Now' : 'Sign In with Google to Start'}
           </Button>
         </div>
       </section>

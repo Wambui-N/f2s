@@ -105,7 +105,10 @@ export const useFormStore = create<FormState>()(
 
       // Actions
       resetForm: () => set({ formData: initialFormData, selectedField: null, conditionalRules: [] }),
-      loadForm: (formData) => set({ formData }),
+      loadForm: (formData) => {
+        console.log('Loading form with ID:', formData.id);
+        set({ formData });
+      },
       setFormData: (formData) => set({ formData }),
       updateFormTitle: (title) =>
         set(

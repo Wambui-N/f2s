@@ -1,43 +1,48 @@
 -- 1. Create the forms table
 CREATE TABLE forms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  status TEXT DEFAULT 'draft',
-  form_data JSONB
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  form_data JSONB NOT NULL
 );
+
+-- Create an index on user_id for faster queries
+CREATE INDEX idx_forms_user_id ON forms(user_id);
+
+-- Create an index on created_at for ordering
+CREATE INDEX idx_forms_created_at ON forms(created_at DESC);
 
 -- 2. Enable Row Level Security (RLS)
 -- This ensures that your data is secure and users can only access their own data.
 ALTER TABLE forms ENABLE ROW LEVEL SECURITY;
 
 -- 3. Create RLS Policies
--- IMPORTANT: For V1, since you don't have user logins for the dashboard,
--- these policies are very permissive. Anyone with the anon key can read/write.
--- You should implement user authentication for the dashboard before going to production.
+-- These policies ensure users can only access their own forms
 
--- Policy: Allow anyone to view all forms (for now)
-CREATE POLICY "Public forms are viewable by everyone."
+-- Policy: Users can view their own forms
+CREATE POLICY "Users can view own forms"
 ON forms FOR SELECT
-USING (true);
+USING (auth.uid() = user_id);
 
--- Policy: Allow anyone to insert new forms (for now)
-CREATE POLICY "Anyone can create new forms."
+-- Policy: Users can insert their own forms
+CREATE POLICY "Users can insert own forms"
 ON forms FOR INSERT
-WITH CHECK (true);
+WITH CHECK (auth.uid() = user_id);
 
--- Policy: Allow anyone to update any form (for now)
-CREATE POLICY "Anyone can update any form."
+-- Policy: Users can update their own forms
+CREATE POLICY "Users can update own forms"
 ON forms FOR UPDATE
-USING (true)
-WITH CHECK (true);
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 
--- Policy: Allow anyone to delete any form (for now)
-CREATE POLICY "Anyone can delete any form."
+-- Policy: Users can delete their own forms
+CREATE POLICY "Users can delete own forms"
 ON forms FOR DELETE
-USING (true);
+USING (auth.uid() = user_id);
 
 -- 4. Create a server-side function to get form submissions (placeholder)
 -- This function would be called from your dashboard to get submissions for a form.
