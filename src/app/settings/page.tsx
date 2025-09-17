@@ -77,33 +77,6 @@ function SettingsContent() {
     }
   };
 
-  const handleConnectToGoogle = async () => {
-    try {
-      setConnectingSheet(true);
-      
-      // Redirect to Google OAuth with Sheets scope
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          scopes: 'openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
-          redirectTo: `${window.location.origin}/settings?connect_sheets=true`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
-        },
-      });
-
-      if (error) {
-        console.error('OAuth error:', error);
-        setConnectingSheet(false);
-      }
-    } catch (error) {
-      console.error('Failed to connect to Google:', error);
-      setConnectingSheet(false);
-    }
-  };
-
   const handleConnectExistingSheet = async () => {
     if (!newSheetUrl.trim()) return;
 
@@ -122,7 +95,8 @@ function SettingsContent() {
 
       if (!session?.provider_token || !session?.provider_refresh_token) {
         alert('Please reconnect your Google account with Sheets permissions.');
-        handleConnectToGoogle();
+        // The handleConnectToGoogle function is removed, so this will now just show an alert.
+        // If the user needs to re-authorize, they'll need to go through the OAuth flow again.
         return;
       }
 
@@ -175,7 +149,8 @@ function SettingsContent() {
       
       if (!session?.provider_token || !session?.provider_refresh_token) {
         alert('Please reconnect your Google account with Sheets permissions.');
-        handleConnectToGoogle();
+        // The handleConnectToGoogle function is removed, so this will now just show an alert.
+        // If the user needs to re-authorize, they'll need to go through the OAuth flow again.
         return;
       }
 
@@ -444,17 +419,9 @@ function SettingsContent() {
 
                         <div className="text-sm text-muted-foreground">
                           <p className="mb-2">
-                            <strong>First time connecting?</strong> You'll need to authorize FormToSheets to access your Google Sheets.
+                            Connect a new or existing Google Sheet to a form from the 'Integrations' tab in the form builder.
                           </p>
                           <div className="space-y-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleConnectToGoogle}
-                              disabled={connectingSheet}
-                            >
-                              Authorize Google Sheets Access
-                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"

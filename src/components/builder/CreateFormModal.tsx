@@ -98,21 +98,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     }
   };
 
-  const handlePermissionRequest = () => {
-    // This flow redirects the user to grant permissions and come back
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        scopes: 'openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
-        redirectTo: window.location.href, // Redirect back to the dashboard
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -148,11 +133,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
               <div>
                 <p className="font-semibold">An error occurred</p>
                 <p>{error}</p>
-                {error.includes("permissions") && (
-                  <Button size="sm" variant="link" className="p-0 h-auto mt-2" onClick={handlePermissionRequest}>
-                    Grant Google Sheets Permissions
-                  </Button>
-                )}
               </div>
             </div>
           )}
