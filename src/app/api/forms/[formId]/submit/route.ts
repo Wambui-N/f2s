@@ -237,10 +237,10 @@ export async function POST(
 // GET endpoint to retrieve form submissions
 export async function GET(
   request: NextRequest,
-  { params }: { params: { formId: string } }
+  context: { params: { formId: string } }
 ) {
   try {
-    const { formId } = params;
+    const { formId } = context.params;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
