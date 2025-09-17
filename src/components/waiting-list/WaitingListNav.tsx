@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { FileText, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { FileText, Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export function WaitingListNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,20 +16,31 @@ export function WaitingListNav() {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <FileText className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">FormToSheets</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">
+                FormToSheets
+              </span>
             </div>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              <a href="#features" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+              <a
+                href="#features"
+                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
                 Features
               </a>
-              <a href="#pricing" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+              <a
+                href="#pricing"
+                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
                 Pricing
               </a>
-              <a href="#faq" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+              <a
+                href="#faq"
+                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
                 FAQ
               </a>
             </div>
@@ -59,13 +70,22 @@ export function WaitingListNav() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-              <a href="#features" className="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              <a
+                href="#features"
+                className="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
+              >
                 Features
               </a>
-              <a href="#pricing" className="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              <a
+                href="#pricing"
+                className="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
+              >
                 Pricing
               </a>
-              <a href="#faq" className="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+              <a
+                href="#faq"
+                className="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
+              >
                 FAQ
               </a>
               <div className="pt-4">

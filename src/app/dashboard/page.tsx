@@ -1,27 +1,34 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  FileText, 
-  BarChart3, 
-  Settings, 
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Plus,
+  FileText,
+  BarChart3,
+  Settings,
   ExternalLink,
   Calendar,
   Users,
   TrendingUp,
   Eye,
   Edit,
-  Trash2
-} from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
-import { CreateFormModal } from '@/components/builder/CreateFormModal';
+  Trash2,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { CreateFormModal } from "@/components/builder/CreateFormModal";
 
 // The FormData type from the database will be slightly different
 // from the one in the form builder's store.
@@ -30,7 +37,7 @@ interface FormRecord {
   title: string;
   description?: string;
   created_at: string; // Supabase sends timestamps as strings
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   // We'll add submission counts later
 }
 
@@ -39,28 +46,33 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [formToDelete, setFormToDelete] = useState<FormRecord | null>(null);
 
   useEffect(() => {
     const fetchForms = async () => {
       if (!user) return;
-      
+
       setLoading(true);
       const { data, error } = await supabase
-        .from('forms')
+        .from("forms")
         .select(`
           id, title, description, created_at, status,
           sheet_connections!forms_default_sheet_connection_id_fkey (
             id, sheet_name, sheet_url, is_active
           )
         `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error('Error fetching forms:', error);
+        console.error("Error fetching forms:", error);
       } else {
         // Here we're assuming submissions count is 0 for now.
-        const formsWithSubmissions = data.map(form => ({ ...form, submissions: 0 }));
+        const formsWithSubmissions = data.map((form) => ({
+          ...form,
+          submissions: 0,
+        }));
         setForms(formsWithSubmissions as any); // Cast because submissions is added
       }
       setLoading(false);
@@ -69,30 +81,44 @@ function DashboardContent() {
     fetchForms();
   }, [user]);
 
-  const handleDeleteForm = async (formId: string) => {
+  const openDeleteDialog = (form: FormRecord) => {
+    setFormToDelete(form);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteForm = async () => {
+    if (!formToDelete) return;
+
     // Optimistic deletion
-    setForms(forms.filter(form => form.id !== formId));
-    
+    setForms(forms.filter((form) => form.id !== formToDelete.id));
+
     const { error } = await supabase
-      .from('forms')
+      .from("forms")
       .delete()
-      .match({ id: formId });
-      
+      .match({ id: formToDelete.id });
+
     if (error) {
-      console.error('Error deleting form:', error);
+      console.error("Error deleting form:", error);
       // Here you might want to add logic to revert the optimistic deletion
       // and show an error message to the user.
     }
+    setDeleteDialogOpen(false);
+    setFormToDelete(null);
   };
 
-  const totalSubmissions = forms.reduce((sum, form: any) => sum + (form.submissions || 0), 0);
-  const publishedForms = forms.filter(form => form.status === 'published').length;
+  const totalSubmissions = forms.reduce(
+    (sum, form: any) => sum + (form.submissions || 0),
+    0,
+  );
+  const publishedForms = forms.filter(
+    (form) => form.status === "published",
+  ).length;
   // This will require a more complex query later on
   const recentSubmissions = 0;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted/40 flex items-center justify-center">
+      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
         <div className="text-center">
           <p>Loading your forms...</p>
         </div>
@@ -101,23 +127,17 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-foreground">Forms</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your forms and track submissions
+              Manage your forms and track submissions.
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Link href="/settings" passHref>
-              <Button variant="outline" size="lg">
-                <Settings size={20} className="mr-2" />
-                Settings
-              </Button>
-            </Link>
             <Button size="lg" onClick={() => setCreateModalOpen(true)}>
               <Plus size={20} className="mr-2" />
               Create New Form
@@ -126,12 +146,14 @@ function DashboardContent() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Forms</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total Forms
+                  </p>
                   <p className="text-2xl font-bold">{forms.length}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-600" />
@@ -143,7 +165,9 @@ function DashboardContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Published</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Published
+                  </p>
                   <p className="text-2xl font-bold">{publishedForms}</p>
                 </div>
                 <ExternalLink className="h-8 w-8 text-green-600" />
@@ -155,7 +179,9 @@ function DashboardContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total Submissions
+                  </p>
                   <p className="text-2xl font-bold">{totalSubmissions}</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-600" />
@@ -167,7 +193,9 @@ function DashboardContent() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">This Week</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    This Week
+                  </p>
                   <p className="text-2xl font-bold">{recentSubmissions}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-orange-600" />
@@ -207,13 +235,32 @@ function DashboardContent() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="font-semibold">{form.title}</h3>
-                        <Badge variant={form.status === 'published' ? 'default' : 'secondary'}>
+                        <Badge
+                          variant={
+                            form.status === "published"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
                           {form.status}
                         </Badge>
                         {form.sheet_connections && (
-                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <Badge
+                            variant="outline"
+                            className="text-green-600 border-green-200 bg-green-50"
+                          >
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
                             </svg>
                             Google Sheets
                           </Badge>
@@ -225,7 +272,8 @@ function DashboardContent() {
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <Calendar size={14} className="mr-1" />
-                          Created {new Date(form.created_at).toLocaleDateString()}
+                          Created{" "}
+                          {new Date(form.created_at).toLocaleDateString()}
                         </div>
                         <div className="flex items-center">
                           <Users size={14} className="mr-1" />
@@ -233,13 +281,18 @@ function DashboardContent() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       {form.sheet_connections && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(form.sheet_connections.sheet_url, '_blank')}
+                          onClick={() =>
+                            window.open(
+                              form.sheet_connections.sheet_url,
+                              "_blank",
+                            )
+                          }
                           className="text-green-600 hover:text-green-700"
                         >
                           <ExternalLink size={14} className="mr-1" />
@@ -247,25 +300,21 @@ function DashboardContent() {
                         </Button>
                       )}
                       <Link href={`/editor/${form.id}`} passHref>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                        >
+                        <Button variant="outline" size="sm">
                           <Edit size={14} className="mr-1" />
                           Edit
+                        </Button>
+                      </Link>
+                      <Link href={`/form/${form.id}`} passHref>
+                        <Button variant="outline" size="sm">
+                          <Eye size={14} className="mr-1" />
+                          View
                         </Button>
                       </Link>
                       <Button
                         variant="outline"
                         size="sm"
-                      >
-                        <Eye size={14} className="mr-1" />
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteForm(form.id)}
+                        onClick={() => openDeleteDialog(form)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 size={14} />
@@ -310,19 +359,37 @@ function DashboardContent() {
             </CardContent>
           </Card>
         </div>
-      </div>
-      <CreateFormModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setCreateModalOpen(false)} 
+      </main>
+      <CreateFormModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setCreateModalOpen(false)}
       />
-    </div>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete your
+              form "{formToDelete?.title}" and all of its submissions.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteForm}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
 export default function Dashboard() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
-  );
+  return <DashboardContent />;
 }

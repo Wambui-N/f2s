@@ -6,62 +6,71 @@ export default function Reviews() {
       name: "Sarah Johnson",
       role: "Marketing Director",
       company: "TechFlow Inc.",
-      content: "FormToSheets has revolutionized how we handle lead generation. What used to take hours of manual data entry now happens automatically. Our team can focus on what matters most - closing deals.",
+      content:
+        "FormToSheets has revolutionized how we handle lead generation. What used to take hours of manual data entry now happens automatically. Our team can focus on what matters most - closing deals.",
       rating: 5,
-      avatar: "SJ"
+      avatar: "SJ",
     },
     {
       name: "Michael Chen",
       role: "Operations Manager",
       company: "StartupXYZ",
-      content: "The setup was incredibly simple. Within minutes, our contact forms were automatically populating our Google Sheets. The real-time sync feature is a game-changer for our small team.",
+      content:
+        "The setup was incredibly simple. Within minutes, our contact forms were automatically populating our Google Sheets. The real-time sync feature is a game-changer for our small team.",
       rating: 5,
-      avatar: "MC"
+      avatar: "MC",
     },
     {
       name: "Emily Rodriguez",
       role: "Event Coordinator",
       company: "EventPro Solutions",
-      content: "Managing event registrations became so much easier with FormToSheets. We can see all our attendees in one organized spreadsheet instantly. Customer support is also fantastic!",
+      content:
+        "Managing event registrations became so much easier with FormToSheets. We can see all our attendees in one organized spreadsheet instantly. Customer support is also fantastic!",
       rating: 5,
-      avatar: "ER"
+      avatar: "ER",
     },
     {
       name: "David Park",
       role: "CEO",
       company: "InnovateLab",
-      content: "As a startup founder, I needed a solution that was both powerful and easy to use. FormToSheets delivers exactly that. It's saved us countless hours and eliminated human error.",
+      content:
+        "As a startup founder, I needed a solution that was both powerful and easy to use. FormToSheets delivers exactly that. It's saved us countless hours and eliminated human error.",
       rating: 5,
-      avatar: "DP"
+      avatar: "DP",
     },
     {
       name: "Lisa Thompson",
       role: "HR Manager",
       company: "GlobalTech",
-      content: "We use FormToSheets for our job applications and employee feedback forms. The automatic organization into Google Sheets makes our HR processes so much more efficient.",
+      content:
+        "We use FormToSheets for our job applications and employee feedback forms. The automatic organization into Google Sheets makes our HR processes so much more efficient.",
       rating: 5,
-      avatar: "LT"
+      avatar: "LT",
     },
     {
       name: "Alex Kumar",
       role: "Sales Manager",
       company: "SalesForce Pro",
-      content: "The integration with Google Sheets is seamless. Our sales team can access lead data instantly, and the automatic formatting makes everything look professional and organized.",
+      content:
+        "The integration with Google Sheets is seamless. Our sales team can access lead data instantly, and the automatic formatting makes everything look professional and organized.",
       rating: 5,
-      avatar: "AK"
-    }
+      avatar: "AK",
+    },
   ];
 
   return (
-    <section id="reviews" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+    <section
+      id="reviews"
+      className="py-20 bg-gradient-to-br from-gray-50 to-blue-50"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Loved by Thousands
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            See what our customers are saying about FormToSheets. 
-            Join thousands of satisfied users who've transformed their workflow.
+            See what our customers are saying about FormToSheets. Join thousands
+            of satisfied users who've transformed their workflow.
           </p>
         </div>
 
@@ -117,9 +126,15 @@ export default function Reviews() {
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                  <div className="text-sm text-gray-600">{testimonial.role}</div>
-                  <div className="text-sm text-blue-600">{testimonial.company}</div>
+                  <div className="font-semibold text-gray-900">
+                    {testimonial.name}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {testimonial.role}
+                  </div>
+                  <div className="text-sm text-blue-600">
+                    {testimonial.company}
+                  </div>
                 </div>
               </div>
             </div>
@@ -143,7 +158,9 @@ export default function Reviews() {
           <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
             Start Your Free Trial
           </button>
-          <p className="text-gray-600 mt-4">No credit card required • 14-day free trial</p>
+          <p className="text-gray-600 mt-4">
+            No credit card required • 14-day free trial
+          </p>
         </div>
       </div>
     </section>

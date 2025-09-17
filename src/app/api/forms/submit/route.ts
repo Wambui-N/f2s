@@ -1,40 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { GoogleAPIClient } from '@/lib/google';
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import type { FormField } from "@/components/builder/types";
+import { GoogleAPIClient } from "@/lib/google";
 
 export async function POST(request: NextRequest) {
   try {
     const { formId, formData, userSettings } = await request.json();
 
     if (!formId || !formData) {
-      return NextResponse.json({ error: 'Form ID and data are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Form ID and data are required" },
+        { status: 400 },
+      );
     }
 
     const supabase = createRouteHandlerClient({ cookies });
 
     // Get form configuration
     const { data: form } = await supabase
-      .from('forms')
-      .select('*')
-      .eq('id', formId)
+      .from("forms")
+      .select("*")
+      .eq("id", formId)
       .single();
 
     if (!form) {
-      return NextResponse.json({ error: 'Form not found' }, { status: 404 });
+      return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
     // Get form owner's Google tokens
     const { data: tokens } = await supabase
-      .from('user_google_tokens')
-      .select('*')
-      .eq('user_id', form.user_id)
+      .from("user_google_tokens")
+      .select("*")
+      .eq("user_id", form.user_id)
       .single();
 
     if (!tokens) {
       // If no Google integration, just store the submission
       const { error: submissionError } = await supabase
-        .from('form_submissions')
+        .from("form_submissions")
         .insert({
           form_id: formId,
           submission_data: formData,
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Form submitted successfully',
+        message: "Form submitted successfully",
       });
     }
 
@@ -61,17 +65,19 @@ export async function POST(request: NextRequest) {
     if (userSettings?.selectedSpreadsheet) {
       try {
         // Get form field mappings
-        const formFields = form.form_data.fields;
-        const headers = formFields.map((field: any) => field.label);
-        const values = formFields.map((field: any) => formData[field.id] || '');
+        const formFields: FormField[] = form.form_data.fields;
+        const _headers = formFields.map((field) => field.label);
+        const values = formFields.map(
+          (field) => formData[field.id] || ""
+        );
 
         await googleClient.writeToSheet(
           userSettings.selectedSpreadsheet,
-          'Sheet1!A:Z',
-          [values]
+          "Sheet1!A:Z",
+          [values],
         );
       } catch (sheetError) {
-        console.error('Error writing to sheet:', sheetError);
+        console.error("Error writing to sheet:", sheetError);
         // Continue with other operations even if sheet write fails
       }
     }
@@ -82,13 +88,13 @@ export async function POST(request: NextRequest) {
         for (const file of formData.files) {
           await googleClient.uploadFile(
             file.name,
-            Buffer.from(file.data, 'base64'),
+            Buffer.from(file.data, "base64"),
             file.type,
-            userSettings.selectedFolder
+            userSettings.selectedFolder,
           );
         }
       } catch (driveError) {
-        console.error('Error uploading to Drive:', driveError);
+        console.error("Error uploading to Drive:", driveError);
         // Continue with other operations even if file upload fails
       }
     }
@@ -99,40 +105,43 @@ export async function POST(request: NextRequest) {
         const eventStart = new Date(formData.appointmentDate);
         const eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000); // 1 hour later
 
-        await googleClient.createCalendarEvent(
-          userSettings.selectedCalendar,
-          {
-            summary: `Form Submission: ${form.title}`,
-            description: `New form submission received.\n\nDetails:\n${Object.entries(formData)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join('\n')}`,
-            start: {
-              dateTime: eventStart.toISOString(),
-              timeZone: 'UTC',
-            },
-            end: {
-              dateTime: eventEnd.toISOString(),
-              timeZone: 'UTC',
-            },
-            attendees: formData.email ? [{ email: formData.email }] : [],
-          }
-        );
+        await googleClient.createCalendarEvent(userSettings.selectedCalendar, {
+          summary: `Form Submission: ${form.title}`,
+          description: `New form submission received.\n\nDetails:\n${Object.entries(
+            formData,
+          )
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}`,
+          start: {
+            dateTime: eventStart.toISOString(),
+            timeZone: "UTC",
+          },
+          end: {
+            dateTime: eventEnd.toISOString(),
+            timeZone: "UTC",
+          },
+          attendees: formData.email ? [{ email: formData.email }] : [],
+        });
       } catch (calendarError) {
-        console.error('Error creating calendar event:', calendarError);
+        console.error("Error creating calendar event:", calendarError);
         // Continue with other operations even if calendar creation fails
       }
     }
 
     // Store submission in database
     const { error: submissionError } = await supabase
-      .from('form_submissions')
+      .from("form_submissions")
       .insert({
         form_id: formId,
         submission_data: formData,
         submitted_at: new Date().toISOString(),
         google_sheet_written: !!userSettings?.selectedSpreadsheet,
-        drive_files_uploaded: !!(userSettings?.selectedFolder && formData.files),
-        calendar_event_created: !!(userSettings?.selectedCalendar && formData.appointmentDate),
+        drive_files_uploaded: !!(
+          userSettings?.selectedFolder && formData.files
+        ),
+        calendar_event_created: !!(
+          userSettings?.selectedCalendar && formData.appointmentDate
+        ),
       });
 
     if (submissionError) {
@@ -141,13 +150,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Form submitted successfully and data synced to Google services',
+      message: "Form submitted successfully and data synced to Google services",
     });
   } catch (error) {
-    console.error('Error processing form submission:', error);
+    console.error("Error processing form submission:", error);
     return NextResponse.json(
-      { error: 'Failed to process form submission' },
-      { status: 500 }
+      { error: "Failed to process form submission" },
+      { status: 500 },
     );
   }
 }

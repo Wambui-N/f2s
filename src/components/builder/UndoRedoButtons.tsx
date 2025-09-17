@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Undo2, Redo2 } from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Undo2, Redo2 } from "lucide-react";
 
 interface UndoRedoButtonsProps {
   canUndo: boolean;
@@ -11,7 +11,12 @@ interface UndoRedoButtonsProps {
   onRedo: () => void;
 }
 
-export function UndoRedoButtons({ canUndo, canRedo, onUndo, onRedo }: UndoRedoButtonsProps) {
+export function UndoRedoButtons({
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+}: UndoRedoButtonsProps) {
   return (
     <div className="flex items-center space-x-2">
       <Button

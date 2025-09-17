@@ -34,9 +34,9 @@ function EditFormContent({ params }: EditFormPageProps) {
     const fetchForm = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from('forms')
-        .select('form_data, user_id')
-        .eq('id', formId)
+        .from("forms")
+        .select("form_data, user_id")
+        .eq("id", formId)
         .single();
 
       if (error) {
@@ -49,12 +49,12 @@ function EditFormContent({ params }: EditFormPageProps) {
           router.push("/dashboard");
           return;
         }
-        
+
         if (data.form_data) {
           // Ensure the form data has the correct database ID
           const formDataWithId = {
             ...data.form_data,
-            id: formId // Use the actual database ID, not the generated one
+            id: formId, // Use the actual database ID, not the generated one
           };
           loadForm(formDataWithId as FormData);
         }

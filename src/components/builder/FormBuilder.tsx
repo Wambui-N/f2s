@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { FieldTypes, FormField, FormData, ConditionalRule } from './types';
-import { FormFieldElement } from './FormFieldElement';
-import { FormPreview } from './FormPreview';
-import { InlineEditableTitle } from './InlineEditableTitle';
-import { FieldSettingsPanel } from './FieldSettingsPanel';
-import { FormTemplates } from './FormTemplates';
-import { ConditionalLogic } from './ConditionalLogic';
-import { SheetMapping } from './SheetMapping';
-import { UndoRedoButtons } from './UndoRedoButtons';
-import { PublishFlow } from './PublishFlow';
-import { DesignPanel } from './DesignPanel';
-import { IntegrationsPanel } from './IntegrationsPanel';
-import { SubmissionsPanel } from './SubmissionsPanel';
-import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { reorder } from '@atlaskit/pragmatic-drag-and-drop/reorder';
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { FieldTypes, FormField, FormData, ConditionalRule } from "./types";
+import { FormFieldElement } from "./FormFieldElement";
+import { FormPreview } from "./FormPreview";
+import { InlineEditableTitle } from "./InlineEditableTitle";
+import { FieldSettingsPanel } from "./FieldSettingsPanel";
+import { FormTemplates } from "./FormTemplates";
+import { ConditionalLogic } from "./ConditionalLogic";
+import { SheetMapping } from "./SheetMapping";
+import { UndoRedoButtons } from "./UndoRedoButtons";
+import { PublishFlow } from "./PublishFlow";
+import { DesignPanel } from "./DesignPanel";
+import { IntegrationsPanel } from "./IntegrationsPanel";
+import { SubmissionsPanel } from "./SubmissionsPanel";
+import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { reorder } from "@atlaskit/pragmatic-drag-and-drop/reorder";
 import {
   ArrowLeft,
   Plus,
@@ -51,12 +51,13 @@ import {
   Heading1,
   FileStack,
   GitBranch,
-} from 'lucide-react';
-import { useFormStore } from '@/store/formStore';
-import { useUndoRedo } from '@/hooks/useUndoRedo';
-import { supabase } from '@/lib/supabase';
-import { Save } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+  Share2,
+} from "lucide-react";
+import { useFormStore } from "@/store/formStore";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { supabase } from "@/lib/supabase";
+import { Save } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FieldButtonProps {
   icon: React.ReactNode;
@@ -66,7 +67,13 @@ interface FieldButtonProps {
   preview: React.ReactNode;
 }
 
-function FieldButton({ icon, label, description, onClick, preview }: FieldButtonProps) {
+function FieldButton({
+  icon,
+  label,
+  description,
+  onClick,
+  preview,
+}: FieldButtonProps) {
   const [showPreview, setShowPreview] = useState(false);
 
   return (
@@ -85,14 +92,12 @@ function FieldButton({ icon, label, description, onClick, preview }: FieldButton
           <div className="text-xs text-gray-500 truncate">{description}</div>
         </div>
       </button>
-      
+
       {/* Hover Preview Tooltip */}
       {showPreview && (
         <div className="absolute left-full top-0 ml-2 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-64">
           <div className="text-xs font-medium text-gray-700 mb-2">Preview:</div>
-          <div className="pointer-events-none">
-            {preview}
-          </div>
+          <div className="pointer-events-none">{preview}</div>
         </div>
       )}
     </div>
@@ -126,8 +131,12 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPublishFlow, setShowPublishFlow] = useState(false);
-  const [activeTab, setActiveTab] = useState<'builder' | 'logic' | 'integrations' | 'submissions'>('builder');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [activeTab, setActiveTab] = useState<
+    "builder" | "logic" | "integrations" | "submissions"
+  >("builder");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "idle",
+  );
   const [formVersion, setFormVersion] = useState(0);
 
   const {
@@ -141,66 +150,68 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
 
   // Debounced auto-save effect
   useEffect(() => {
-    console.log('Auto-save effect triggered:', {
+    console.log("Auto-save effect triggered:", {
       title: formData.title,
       fieldsCount: formData.fields.length,
       formId: formData.id,
-      hasUser: !!user
+      hasUser: !!user,
     });
 
     // Don't save the initial default form data until it's changed
-    if (formData.title === 'Untitled Form' && formData.fields.length === 3) {
-      console.log('Skipping auto-save: Default form data');
+    if (formData.title === "Untitled Form" && formData.fields.length === 3) {
+      console.log("Skipping auto-save: Default form data");
       return;
     }
 
     if (!user) {
-      console.log('Skipping auto-save: No user');
+      console.log("Skipping auto-save: No user");
       return;
     }
 
     // Don't try to save if we don't have a valid form ID
-    if (!formData.id || formData.id.startsWith('field_')) {
-      console.log('Skipping auto-save: Invalid or temporary form ID:', formData.id);
+    if (!formData.id || formData.id.startsWith("field_")) {
+      console.log(
+        "Skipping auto-save: Invalid or temporary form ID:",
+        formData.id,
+      );
       return;
     }
 
-    setSaveStatus('saving');
+    setSaveStatus("saving");
     const timer = setTimeout(async () => {
       try {
         const { error } = await supabase
-          .from('forms')
-          .update({ 
+          .from("forms")
+          .update({
             form_data: formData,
             title: formData.title,
             description: formData.description,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', formData.id)
-          .eq('user_id', user.id); // Ensure user owns the form
+          .eq("id", formData.id)
+          .eq("user_id", user.id); // Ensure user owns the form
 
         if (error) {
-          console.error('Error auto-saving form:', {
+          console.error("Error auto-saving form:", {
             error,
             formId: formData.id,
             userId: user.id,
-            formTitle: formData.title
+            formTitle: formData.title,
           });
-          setSaveStatus('idle');
+          setSaveStatus("idle");
         } else {
-          console.log('Form auto-saved successfully:', formData.title);
-          setSaveStatus('saved');
-          setTimeout(() => setSaveStatus('idle'), 2000);
+          console.log("Form auto-saved successfully:", formData.title);
+          setSaveStatus("saved");
+          setTimeout(() => setSaveStatus("idle"), 2000);
         }
       } catch (err) {
-        console.error('Auto-save exception:', err);
-        setSaveStatus('idle');
+        console.error("Auto-save exception:", err);
+        setSaveStatus("idle");
       }
     }, 1500); // 1.5-second debounce delay
 
     return () => clearTimeout(timer);
   }, [formData, user]);
-
 
   useEffect(() => {
     const el = ref.current;
@@ -222,7 +233,15 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const handleSyncHeaders = async () => {
     // Simulate API call to get sheet headers
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSheetHeaders(['Full Name', 'Email', 'Phone', 'Company', 'Service Type', 'Budget', 'Message']);
+    setSheetHeaders([
+      "Full Name",
+      "Email",
+      "Phone",
+      "Company",
+      "Service Type",
+      "Budget",
+      "Message",
+    ]);
   };
 
   const renderRightSidebar = () => {
@@ -233,16 +252,20 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold">
-              {rightSidebar === 'fields' && 'Add Fields'}
-              {rightSidebar === 'design' && 'Design'}
-              {rightSidebar === 'settings' && 'Settings'}
+              {rightSidebar === "fields" && "Add Fields"}
+              {rightSidebar === "design" && "Design"}
+              {rightSidebar === "settings" && "Settings"}
             </h3>
-            <Button variant="ghost" size="sm" onClick={() => setRightSidebar(null)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRightSidebar(null)}
+            >
               ×
             </Button>
           </div>
 
-          {rightSidebar === 'fields' && (
+          {rightSidebar === "fields" && (
             <div className="space-y-6">
               {/* Input Fields */}
               <div>
@@ -255,43 +278,78 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<Type className="w-4 h-4" />}
                     label="Text"
                     description="Single line text input"
-                    onClick={() => addField('text')}
-                    preview={<input type="text" placeholder="Enter text..." className="w-full px-3 py-2 border rounded-md text-sm" />}
+                    onClick={() => addField("text")}
+                    preview={
+                      <input
+                        type="text"
+                        placeholder="Enter text..."
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                      />
+                    }
                   />
                   <FieldButton
                     icon={<Mail className="w-4 h-4" />}
                     label="Email"
                     description="Email address input"
-                    onClick={() => addField('email')}
-                    preview={<input type="email" placeholder="name@example.com" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                    onClick={() => addField("email")}
+                    preview={
+                      <input
+                        type="email"
+                        placeholder="name@example.com"
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                      />
+                    }
                   />
                   <FieldButton
                     icon={<Phone className="w-4 h-4" />}
                     label="Phone"
                     description="Phone number input"
-                    onClick={() => addField('phone')}
-                    preview={<input type="tel" placeholder="+1 (555) 123-4567" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                    onClick={() => addField("phone")}
+                    preview={
+                      <input
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                      />
+                    }
                   />
                   <FieldButton
                     icon={<LinkIcon className="w-4 h-4" />}
                     label="URL"
                     description="Website URL input"
-                    onClick={() => addField('url')}
-                    preview={<input type="url" placeholder="https://example.com" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                    onClick={() => addField("url")}
+                    preview={
+                      <input
+                        type="url"
+                        placeholder="https://example.com"
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                      />
+                    }
                   />
                   <FieldButton
                     icon={<FileText className="w-4 h-4" />}
                     label="Textarea"
                     description="Multi-line text input"
-                    onClick={() => addField('textarea')}
-                    preview={<textarea placeholder="Enter message..." className="w-full px-3 py-2 border rounded-md text-sm h-16 resize-none" />}
+                    onClick={() => addField("textarea")}
+                    preview={
+                      <textarea
+                        placeholder="Enter message..."
+                        className="w-full px-3 py-2 border rounded-md text-sm h-16 resize-none"
+                      />
+                    }
                   />
                   <FieldButton
                     icon={<Hash className="w-4 h-4" />}
                     label="Number"
                     description="Numeric input"
-                    onClick={() => addField('number')}
-                    preview={<input type="number" placeholder="123" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                    onClick={() => addField("number")}
+                    preview={
+                      <input
+                        type="number"
+                        placeholder="123"
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                      />
+                    }
                   />
                 </div>
               </div>
@@ -307,7 +365,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<List className="w-4 h-4" />}
                     label="Select"
                     description="Dropdown selection"
-                    onClick={() => addField('select')}
+                    onClick={() => addField("select")}
                     preview={
                       <select className="w-full px-3 py-2 border rounded-md text-sm">
                         <option>Choose option...</option>
@@ -320,7 +378,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<Circle className="w-4 h-4" />}
                     label="Radio"
                     description="Single choice selection"
-                    onClick={() => addField('radio')}
+                    onClick={() => addField("radio")}
                     preview={
                       <div className="space-y-1">
                         <label className="flex items-center text-sm">
@@ -338,7 +396,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<CheckSquare className="w-4 h-4" />}
                     label="Checkbox"
                     description="Multiple choice selection"
-                    onClick={() => addField('checkbox')}
+                    onClick={() => addField("checkbox")}
                     preview={
                       <div className="space-y-1">
                         <label className="flex items-center text-sm">
@@ -356,10 +414,15 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<Star className="w-4 h-4" />}
                     label="Rating"
                     description="Star or scale rating"
-                    onClick={() => addField('rating')}
+                    onClick={() => addField("rating")}
                     preview={
                       <div className="flex items-center space-x-1">
-                        {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />)}
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <Star
+                            key={i}
+                            className="w-4 h-4 text-yellow-400 fill-current"
+                          />
+                        ))}
                       </div>
                     }
                   />
@@ -367,7 +430,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<ToggleLeft className="w-4 h-4" />}
                     label="Switch"
                     description="Toggle on/off"
-                    onClick={() => addField('switch')}
+                    onClick={() => addField("switch")}
                     preview={
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-4 bg-gray-300 rounded-full relative">
@@ -391,7 +454,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<Upload className="w-4 h-4" />}
                     label="File Upload"
                     description="Upload any file type"
-                    onClick={() => addField('file')}
+                    onClick={() => addField("file")}
                     preview={
                       <div className="border-2 border-dashed border-gray-300 rounded-md p-3 text-center">
                         <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
@@ -403,7 +466,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<ImageIcon className="w-4 h-4" />}
                     label="Image Upload"
                     description="Upload images only"
-                    onClick={() => addField('image')}
+                    onClick={() => addField("image")}
                     preview={
                       <div className="border-2 border-dashed border-gray-300 rounded-md p-3 text-center">
                         <ImageIcon className="w-6 h-6 mx-auto text-gray-400 mb-1" />
@@ -425,13 +488,22 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<MapPin className="w-4 h-4" />}
                     label="Address"
                     description="Complete address form"
-                    onClick={() => addField('address')}
+                    onClick={() => addField("address")}
                     preview={
                       <div className="space-y-2">
-                        <input placeholder="Street Address" className="w-full px-2 py-1 border rounded text-xs" />
+                        <input
+                          placeholder="Street Address"
+                          className="w-full px-2 py-1 border rounded text-xs"
+                        />
                         <div className="grid grid-cols-2 gap-1">
-                          <input placeholder="City" className="px-2 py-1 border rounded text-xs" />
-                          <input placeholder="State" className="px-2 py-1 border rounded text-xs" />
+                          <input
+                            placeholder="City"
+                            className="px-2 py-1 border rounded text-xs"
+                          />
+                          <input
+                            placeholder="State"
+                            className="px-2 py-1 border rounded text-xs"
+                          />
                         </div>
                       </div>
                     }
@@ -440,17 +512,24 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<Calendar className="w-4 h-4" />}
                     label="Date"
                     description="Date picker"
-                    onClick={() => addField('date')}
-                    preview={<input type="date" className="w-full px-3 py-2 border rounded-md text-sm" />}
+                    onClick={() => addField("date")}
+                    preview={
+                      <input
+                        type="date"
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                      />
+                    }
                   />
                   <FieldButton
                     icon={<Heading1 className="w-4 h-4" />}
                     label="Header"
                     description="Section title/heading"
-                    onClick={() => addField('header')}
+                    onClick={() => addField("header")}
                     preview={
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Section Title</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Section Title
+                        </h3>
                       </div>
                     }
                   />
@@ -458,7 +537,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<Minus className="w-4 h-4" />}
                     label="Divider"
                     description="Section separator"
-                    onClick={() => addField('divider')}
+                    onClick={() => addField("divider")}
                     preview={
                       <div>
                         <p className="text-sm font-medium">Section Title</p>
@@ -470,10 +549,12 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<AlignLeft className="w-4 h-4" />}
                     label="Text Block"
                     description="Rich text content"
-                    onClick={() => addField('richtext')}
+                    onClick={() => addField("richtext")}
                     preview={
                       <div className="prose prose-sm max-w-none">
-                        <p className="text-sm">Add instructions or information here...</p>
+                        <p className="text-sm">
+                          Add instructions or information here...
+                        </p>
                       </div>
                     }
                   />
@@ -481,7 +562,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                     icon={<EyeOff className="w-4 h-4" />}
                     label="Hidden"
                     description="Hidden form field"
-                    onClick={() => addField('hidden')}
+                    onClick={() => addField("hidden")}
                     preview={
                       <div className="bg-gray-100 rounded px-2 py-1 text-xs text-gray-500 italic">
                         Hidden field (not visible to users)
@@ -493,11 +574,9 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             </div>
           )}
 
-          {rightSidebar === 'design' && (
-            <DesignPanel />
-          )}
+          {rightSidebar === "design" && <DesignPanel />}
 
-          {rightSidebar === 'settings' && (
+          {rightSidebar === "settings" && (
             <div className="space-y-6">
               <div>
                 <Label htmlFor="form-title">Form Title</Label>
@@ -508,12 +587,12 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                   className="mt-1"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="form-description">Description</Label>
                 <Textarea
                   id="form-description"
-                  value={formData.description || ''}
+                  value={formData.description || ""}
                   onChange={(e) => updateFormDescription(e.target.value)}
                   className="mt-1"
                   rows={3}
@@ -541,13 +620,13 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               onSave={updateFormTitle}
               className="text-lg font-medium"
             />
-             {saveStatus === 'saving' && (
+            {saveStatus === "saving" && (
               <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                 <Save size={12} className="animate-spin" />
                 <span>Saving...</span>
               </div>
             )}
-            {saveStatus === 'saved' && (
+            {saveStatus === "saved" && (
               <div className="flex items-center space-x-1 text-sm text-green-600">
                 <Save size={12} />
                 <span>Saved</span>
@@ -559,7 +638,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setRightSidebar('fields')}
+              onClick={() => setRightSidebar("fields")}
               className="flex items-center space-x-2"
             >
               <Plus size={16} />
@@ -568,7 +647,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setRightSidebar('design')}
+              onClick={() => setRightSidebar("design")}
               className="flex items-center space-x-2"
             >
               <Palette size={16} />
@@ -577,7 +656,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setActiveTab('builder')}
+              onClick={() => setActiveTab("builder")}
               className="flex items-center space-x-2"
             >
               <Eye size={16} />
@@ -599,38 +678,38 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               variant="ghost"
               size="sm"
               onClick={async () => {
-                console.log('Manual save clicked. Form data:', {
+                console.log("Manual save clicked. Form data:", {
                   id: formData.id,
                   title: formData.title,
-                  userId: user?.id
+                  userId: user?.id,
                 });
-                
-                if (!formData.id || formData.id.startsWith('field_')) {
-                  alert('Cannot save: Invalid form ID');
+
+                if (!formData.id || formData.id.startsWith("field_")) {
+                  alert("Cannot save: Invalid form ID");
                   return;
                 }
-                
+
                 try {
                   const { error } = await supabase
-                    .from('forms')
-                    .update({ 
+                    .from("forms")
+                    .update({
                       form_data: formData,
                       title: formData.title,
                       description: formData.description,
-                      updated_at: new Date().toISOString()
+                      updated_at: new Date().toISOString(),
                     })
-                    .eq('id', formData.id)
-                    .eq('user_id', user?.id);
+                    .eq("id", formData.id)
+                    .eq("user_id", user?.id);
 
                   if (error) {
-                    console.error('Manual save error:', error);
-                    alert('Save failed: ' + JSON.stringify(error));
+                    console.error("Manual save error:", error);
+                    alert("Save failed: " + JSON.stringify(error));
                   } else {
-                    alert('Saved successfully!');
+                    alert("Saved successfully!");
                   }
                 } catch (err) {
-                  console.error('Manual save exception:', err);
-                  alert('Save exception: ' + err);
+                  console.error("Manual save exception:", err);
+                  alert("Save exception: " + err);
                 }
               }}
               className="flex items-center space-x-2"
@@ -641,18 +720,31 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setRightSidebar('settings')}
+              onClick={() => setRightSidebar("settings")}
               className="flex items-center space-x-2"
             >
               <Settings size={16} />
               <span>Settings</span>
             </Button>
+            {formData.status === "published" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPublishFlow(true)}
+                className="flex items-center space-x-2"
+              >
+                <Share2 size={16} />
+                <span>Share</span>
+              </Button>
+            )}
             <Button
               onClick={() => setShowPublishFlow(true)}
               className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
             >
               <Send size={16} />
-              <span>Publish</span>
+              <span>
+                {formData.status === "published" ? "Published" : "Publish"}
+              </span>
             </Button>
           </div>
         </div>
@@ -664,83 +756,88 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             <CardHeader className="pb-4">
               <div className="flex space-x-1">
                 <Button
-                  variant={activeTab === 'builder' ? 'default' : 'ghost'}
+                  variant={activeTab === "builder" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setActiveTab('builder')}
+                  onClick={() => setActiveTab("builder")}
                 >
                   Builder
                 </Button>
                 <Button
-                  variant={activeTab === 'logic' ? 'default' : 'ghost'}
+                  variant={activeTab === "logic" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setActiveTab('logic')}
+                  onClick={() => setActiveTab("logic")}
                 >
                   Logic
                 </Button>
                 <Button
-                  variant={activeTab === 'integrations' ? 'default' : 'ghost'}
+                  variant={activeTab === "integrations" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setActiveTab('integrations')}
+                  onClick={() => setActiveTab("integrations")}
                 >
                   Integrations
                 </Button>
                 <Button
-                  variant={activeTab === 'submissions' ? 'default' : 'ghost'}
+                  variant={activeTab === "submissions" ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setActiveTab('submissions')}
+                  onClick={() => setActiveTab("submissions")}
                 >
                   Submissions
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="h-full overflow-y-auto">
-              {activeTab === 'builder' && (
+              {activeTab === "builder" && (
                 <div className="space-y-4">
-                  <FormPreview 
-                    formData={formData} 
+                  <FormPreview
+                    formData={formData}
                     isPreview={true}
                     onSubmit={(data) => {
-                      console.log('Form submitted:', data);
-                      alert('Form submitted successfully! (Preview mode)');
+                      console.log("Form submitted:", data);
+                      alert("Form submitted successfully! (Preview mode)");
                     }}
                   />
-                  
+
                   {/* Builder view for editing */}
                   <div className="mt-8">
                     <h3 className="text-lg font-semibold mb-4">Form Fields</h3>
-                    <div ref={ref} className={`space-y-4 ${isDraggingOver ? 'bg-muted/40 rounded-md p-4' : ''}`}>
-                      {formData.fields.map((field: FormField, index: number) => (
-                        <FormFieldElement
-                          key={field.id}
-                          field={field}
-                          index={index}
-                          onEdit={setSelectedField}
-                          onDelete={deleteField}
-                          isSelected={selectedField?.id === field.id}
-                        />
-                      ))}
+                    <div
+                      ref={ref}
+                      className={`space-y-4 ${isDraggingOver ? "bg-muted/40 rounded-md p-4" : ""}`}
+                    >
+                      {formData.fields.map(
+                        (field: FormField, index: number) => (
+                          <FormFieldElement
+                            key={field.id}
+                            field={field}
+                            index={index}
+                            onEdit={setSelectedField}
+                            onDelete={deleteField}
+                            isSelected={selectedField?.id === field.id}
+                          />
+                        ),
+                      )}
                     </div>
                   </div>
                 </div>
               )}
-              {activeTab === 'logic' && (
+              {activeTab === "logic" && (
                 <ConditionalLogic
                   fields={formData.fields}
                   rules={conditionalRules}
                   onUpdateRules={setConditionalRules}
                 />
               )}
-              {activeTab === 'integrations' && (
-                <IntegrationsPanel 
-                  key={formVersion} 
-                  formData={formData} 
+              {activeTab === "integrations" && (
+                <IntegrationsPanel
+                  key={formVersion}
+                  formData={formData}
                   onConnectionUpdate={() => {
                     // Increment key to force re-mount and data re-fetch
-                    setFormVersion(v => v + 1);
+                    setFormVersion((v) => v + 1);
                   }}
                 />
               )}
-              {activeTab === 'submissions' && (
+              {activeTab === "submissions" && (
                 <SubmissionsPanel key={formVersion} formData={formData} />
               )}
             </CardContent>

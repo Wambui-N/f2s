@@ -1,47 +1,52 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { googleSheetsService } from '@/lib/googleSheets';
+import { googleSheetsService } from "@/lib/googleSheets";
+import { supabase } from "@/lib/supabase";
+import type { FormField } from "@/components/builder/types";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { connectionId: string } }
-) {
+): Promise<NextResponse> {
   try {
     const { connectionId } = params;
-    
+
     // Get the sheet connection
     const { data: connection, error: connectionError } = await supabase
-      .from('sheet_connections')
-      .select('*')
-      .eq('id', connectionId)
+      .from("sheet_connections")
+      .select("*")
+      .eq("id", connectionId)
       .single();
 
     if (connectionError || !connection) {
       return NextResponse.json(
-        { error: 'Sheet connection not found' },
-        { status: 404 }
+        { error: "Sheet connection not found" },
+        { status: 404 },
       );
     }
 
     // Get all forms that use this sheet connection to gather headers
     const { data: forms, error: formsError } = await supabase
-      .from('forms')
-      .select('form_data')
-      .eq('default_sheet_connection_id', connectionId);
+      .from("forms")
+      .select("form_data")
+      .eq("default_sheet_connection_id", connectionId);
 
     if (formsError) {
       return NextResponse.json(
-        { error: 'Failed to fetch forms' },
-        { status: 500 }
+        { error: "Failed to fetch forms" },
+        { status: 500 },
       );
     }
 
     // Extract all unique field labels from forms
     const allHeaders = new Set<string>();
-    forms?.forEach(form => {
-      if (form.form_data && form.form_data.fields) {
-        form.form_data.fields.forEach((field: any) => {
-          if (field.label && field.type !== 'divider' && field.type !== 'header') {
+    forms?.forEach((form) => {
+      if (form.form_data?.fields) {
+        form.form_data.fields.forEach((field: FormField) => {
+          if (
+            field.label &&
+            field.type !== "divider" &&
+            field.type !== "header"
+          ) {
             allHeaders.add(field.label);
           }
         });
@@ -51,26 +56,27 @@ export async function POST(
     // Sync headers with the sheet
     const success = await googleSheetsService.syncHeaders(
       connection,
-      Array.from(allHeaders)
+      Array.from(allHeaders),
     );
 
     if (!success) {
       return NextResponse.json(
-        { error: 'Failed to sync headers with Google Sheet' },
-        { status: 500 }
+        { error: "Failed to sync headers with Google Sheet" },
+        { status: 500 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Headers synced successfully',
+      message: "Headers synced successfully",
       headerCount: allHeaders.size,
     });
-
-  } catch (error: any) {
-    console.error('Header sync error:', error);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    console.error("Header sync error:", error);
     return NextResponse.json(
-      { error: error.message || 'Failed to sync headers' },
+      { error: errorMessage || "Failed to sync headers" },
       { status: 500 }
     );
   }

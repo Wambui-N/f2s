@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google } from "googleapis";
 
 export interface GoogleTokens {
   access_token: string;
@@ -13,7 +13,7 @@ export class GoogleAPIClient {
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.NEXTAUTH_URL}/auth/callback/google`
+      `${process.env.NEXTAUTH_URL}/auth/callback/google`,
     );
 
     this.oauth2Client.setCredentials({
@@ -22,7 +22,7 @@ export class GoogleAPIClient {
     });
 
     // Auto-refresh tokens
-    this.oauth2Client.on('tokens', (tokens: any) => {
+    this.oauth2Client.on("tokens", (tokens: any) => {
       if (tokens.refresh_token) {
         // Store new tokens in database
         this.updateStoredTokens(tokens);
@@ -32,7 +32,7 @@ export class GoogleAPIClient {
 
   private async updateStoredTokens(tokens: any) {
     // This will be implemented to update tokens in Supabase
-    console.log('Updating stored tokens:', tokens);
+    console.log("Updating stored tokens:", tokens);
   }
 
   async refreshTokens(): Promise<GoogleTokens> {
@@ -40,27 +40,27 @@ export class GoogleAPIClient {
       const { credentials } = await this.oauth2Client.refreshAccessToken();
       return {
         access_token: credentials.access_token,
-        refresh_token: credentials.refresh_token || '',
+        refresh_token: credentials.refresh_token || "",
         expires_at: credentials.expiry_date || Date.now() + 3600000,
       };
     } catch (error) {
-      console.error('Error refreshing tokens:', error);
-      throw new Error('Failed to refresh Google tokens');
+      console.error("Error refreshing tokens:", error);
+      throw new Error("Failed to refresh Google tokens");
     }
   }
 
   // Google Sheets API methods
   async getSheets() {
-    const sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
+    const sheets = google.sheets({ version: "v4", auth: this.oauth2Client });
     return sheets;
   }
 
   async listSpreadsheets() {
-    const drive = google.drive({ version: 'v3', auth: this.oauth2Client });
+    const drive = google.drive({ version: "v3", auth: this.oauth2Client });
     const response = await drive.files.list({
       q: "mimeType='application/vnd.google-apps.spreadsheet'",
-      fields: 'files(id, name, createdTime, modifiedTime)',
-      orderBy: 'modifiedTime desc',
+      fields: "files(id, name, createdTime, modifiedTime)",
+      orderBy: "modifiedTime desc",
       pageSize: 50,
     });
     return response.data.files || [];
@@ -78,16 +78,12 @@ export class GoogleAPIClient {
     return response.data;
   }
 
-  async writeToSheet(
-    spreadsheetId: string,
-    range: string,
-    values: any[][]
-  ) {
+  async writeToSheet(spreadsheetId: string, range: string, values: any[][]) {
     const sheets = await this.getSheets();
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: "USER_ENTERED",
       requestBody: {
         values,
       },
@@ -95,7 +91,7 @@ export class GoogleAPIClient {
     return response.data;
   }
 
-  async getSheetHeaders(spreadsheetId: string, sheetName: string = 'Sheet1') {
+  async getSheetHeaders(spreadsheetId: string, sheetName: string = "Sheet1") {
     const sheets = await this.getSheets();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -106,7 +102,7 @@ export class GoogleAPIClient {
 
   // Google Drive API methods
   async getDrive() {
-    const drive = google.drive({ version: 'v3', auth: this.oauth2Client });
+    const drive = google.drive({ version: "v3", auth: this.oauth2Client });
     return drive;
   }
 
@@ -114,8 +110,8 @@ export class GoogleAPIClient {
     const drive = await this.getDrive();
     const response = await drive.files.list({
       q: "mimeType='application/vnd.google-apps.folder'",
-      fields: 'files(id, name, parents)',
-      orderBy: 'name',
+      fields: "files(id, name, parents)",
+      orderBy: "name",
       pageSize: 100,
     });
     return response.data.files || [];
@@ -126,7 +122,7 @@ export class GoogleAPIClient {
     const response = await drive.files.create({
       requestBody: {
         name,
-        mimeType: 'application/vnd.google-apps.folder',
+        mimeType: "application/vnd.google-apps.folder",
         parents: parentId ? [parentId] : undefined,
       },
     });
@@ -137,7 +133,7 @@ export class GoogleAPIClient {
     fileName: string,
     fileBuffer: Buffer,
     mimeType: string,
-    folderId?: string
+    folderId?: string,
   ) {
     const drive = await this.getDrive();
     const response = await drive.files.create({
@@ -155,7 +151,10 @@ export class GoogleAPIClient {
 
   // Google Calendar API methods
   async getCalendar() {
-    const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
+    const calendar = google.calendar({
+      version: "v3",
+      auth: this.oauth2Client,
+    });
     return calendar;
   }
 
@@ -173,7 +172,7 @@ export class GoogleAPIClient {
       start: { dateTime: string; timeZone?: string };
       end: { dateTime: string; timeZone?: string };
       attendees?: { email: string }[];
-    }
+    },
   ) {
     const calendar = await this.getCalendar();
     const response = await calendar.events.insert({

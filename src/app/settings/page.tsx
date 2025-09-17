@@ -1,61 +1,58 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Settings, 
-  User, 
-  Trash2, 
-  Plus, 
-  ExternalLink, 
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Settings,
+  User,
+  Trash2,
+  Plus,
+  ExternalLink,
   RefreshCw,
   CheckCircle,
   AlertCircle,
   Link as LinkIcon,
-  Sheet
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
-
-interface SheetConnection {
-  id: string;
-  sheet_id: string;
-  sheet_name: string;
-  sheet_url: string;
-  created_at: string;
-  last_synced: string | null;
-  is_active: boolean;
-}
+  Sheet,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import type { SheetConnection } from "@/lib/types";
 
 function SettingsContent() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const [sheetConnections, setSheetConnections] = useState<SheetConnection[]>([]);
+  const [sheetConnections, setSheetConnections] = useState<SheetConnection[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [connectingSheet, setConnectingSheet] = useState(false);
-  const [newSheetUrl, setNewSheetUrl] = useState('');
-  const [newSheetName, setNewSheetName] = useState('');
+  const [newSheetUrl, setNewSheetUrl] = useState("");
+  const [newSheetName, setNewSheetName] = useState("");
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [createNewSheet, setCreateNewSheet] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadSheetConnections();
-      
+
       // Check if user returned from OAuth with sheets permissions
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('connect_sheets') === 'true') {
+      if (urlParams.get("connect_sheets") === "true") {
         // Remove the parameter from URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
         // Show success message or automatically try to connect
-        console.log('User returned with Sheets permissions');
+        console.log("User returned with Sheets permissions");
       }
     }
   }, [user]);
@@ -63,15 +60,15 @@ function SettingsContent() {
   const loadSheetConnections = async () => {
     try {
       const { data, error } = await supabase
-        .from('sheet_connections')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .from("sheet_connections")
+        .select("*")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setSheetConnections(data || []);
     } catch (error) {
-      console.error('Failed to load sheet connections:', error);
+      console.error("Failed to load sheet connections:", error);
     } finally {
       setLoading(false);
     }
@@ -82,29 +79,31 @@ function SettingsContent() {
 
     try {
       setConnectingSheet(true);
-      
+
       // Get fresh tokens from current session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      console.log('Session data:', {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("Session data:", {
         hasSession: !!session,
         hasProviderToken: !!session?.provider_token,
         hasRefreshToken: !!session?.provider_refresh_token,
-        provider: session?.app_metadata?.provider
+        provider: user?.app_metadata?.provider,
       });
 
       if (!session?.provider_token || !session?.provider_refresh_token) {
-        alert('Please reconnect your Google account with Sheets permissions.');
+        alert("Please reconnect your Google account with Sheets permissions.");
         // The handleConnectToGoogle function is removed, so this will now just show an alert.
         // If the user needs to re-authorize, they'll need to go through the OAuth flow again.
         return;
       }
 
-      const response = await fetch('/api/sheets/connect', {
-        method: 'POST',
+      const response = await fetch("/api/sheets/connect", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           sheetUrl: newSheetUrl,
@@ -116,16 +115,16 @@ function SettingsContent() {
       const result = await response.json();
 
       if (result.success) {
-        setNewSheetUrl('');
+        setNewSheetUrl("");
         setShowConnectForm(false);
         loadSheetConnections();
-        alert('Sheet connected successfully!');
+        alert("Sheet connected successfully!");
       } else {
         alert(`Failed to connect sheet: ${result.error}`);
       }
     } catch (error) {
-      console.error('Failed to connect sheet:', error);
-      alert('Failed to connect sheet. Please try again.');
+      console.error("Failed to connect sheet:", error);
+      alert("Failed to connect sheet. Please try again.");
     } finally {
       setConnectingSheet(false);
     }
@@ -136,29 +135,31 @@ function SettingsContent() {
 
     try {
       setConnectingSheet(true);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      console.log('Create sheet - Session data:', {
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("Create sheet - Session data:", {
         hasSession: !!session,
         hasProviderToken: !!session?.provider_token,
         hasRefreshToken: !!session?.provider_refresh_token,
-        provider: session?.app_metadata?.provider,
-        scopes: session?.provider_token ? 'token exists' : 'no token'
+        provider: user?.app_metadata?.provider,
+        scopes: session?.provider_token ? "token exists" : "no token",
       });
-      
+
       if (!session?.provider_token || !session?.provider_refresh_token) {
-        alert('Please reconnect your Google account with Sheets permissions.');
+        alert("Please reconnect your Google account with Sheets permissions.");
         // The handleConnectToGoogle function is removed, so this will now just show an alert.
         // If the user needs to re-authorize, they'll need to go through the OAuth flow again.
         return;
       }
 
-      const response = await fetch('/api/sheets/create', {
-        method: 'POST',
+      const response = await fetch("/api/sheets/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           sheetName: newSheetName,
@@ -170,61 +171,67 @@ function SettingsContent() {
       const result = await response.json();
 
       if (result.success) {
-        setNewSheetName('');
+        setNewSheetName("");
         setCreateNewSheet(false);
         setShowConnectForm(false);
         loadSheetConnections();
-        alert('New sheet created and connected successfully!');
+        alert("New sheet created and connected successfully!");
       } else {
         alert(`Failed to create sheet: ${result.error}`);
       }
     } catch (error) {
-      console.error('Failed to create sheet:', error);
-      alert('Failed to create sheet. Please try again.');
+      console.error("Failed to create sheet:", error);
+      alert("Failed to create sheet. Please try again.");
     } finally {
       setConnectingSheet(false);
     }
   };
 
   const handleDeleteConnection = async (connectionId: string) => {
-    if (!confirm('Are you sure you want to disconnect this Google Sheet? Forms using this sheet will no longer sync submissions.')) {
+    if (
+      !confirm(
+        "Are you sure you want to disconnect this Google Sheet? Forms using this sheet will no longer sync submissions.",
+      )
+    ) {
       return;
     }
 
     try {
       const { error } = await supabase
-        .from('sheet_connections')
+        .from("sheet_connections")
         .delete()
-        .eq('id', connectionId)
-        .eq('user_id', user?.id);
+        .eq("id", connectionId)
+        .eq("user_id", user?.id);
 
       if (error) throw error;
-      
-      setSheetConnections(prev => prev.filter(conn => conn.id !== connectionId));
-      alert('Sheet disconnected successfully.');
+
+      setSheetConnections((prev) =>
+        prev.filter((conn) => conn.id !== connectionId),
+      );
+      alert("Sheet disconnected successfully.");
     } catch (error) {
-      console.error('Failed to delete connection:', error);
-      alert('Failed to disconnect sheet. Please try again.');
+      console.error("Failed to delete connection:", error);
+      alert("Failed to disconnect sheet. Please try again.");
     }
   };
 
   const handleSyncHeaders = async (connectionId: string) => {
     try {
       const response = await fetch(`/api/sheets/${connectionId}/sync-headers`, {
-        method: 'POST',
+        method: "POST",
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         loadSheetConnections(); // Reload to get updated last_synced
-        alert('Headers synced successfully!');
+        alert("Headers synced successfully!");
       } else {
         alert(`Failed to sync headers: ${result.error}`);
       }
     } catch (error) {
-      console.error('Failed to sync headers:', error);
-      alert('Failed to sync headers. Please try again.');
+      console.error("Failed to sync headers:", error);
+      alert("Failed to sync headers. Please try again.");
     }
   };
 
@@ -250,7 +257,7 @@ function SettingsContent() {
               Manage your account and Google Sheets connections
             </p>
           </div>
-          <Button variant="outline" onClick={() => router.push('/dashboard')}>
+          <Button variant="outline" onClick={() => router.push("/dashboard")}>
             Back to Dashboard
           </Button>
         </div>
@@ -269,21 +276,21 @@ function SettingsContent() {
                 <div className="flex items-center space-x-4">
                   <img
                     src={user?.user_metadata?.avatar_url}
-                    alt={user?.user_metadata?.full_name || 'User'}
+                    alt={user?.user_metadata?.full_name || "User"}
                     className="w-16 h-16 rounded-full"
                   />
                   <div>
                     <h3 className="font-semibold">
-                      {user?.user_metadata?.full_name || 'Unknown User'}
+                      {user?.user_metadata?.full_name || "Unknown User"}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {user?.email}
                     </p>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-2">
                   <Label>Account Status</Label>
                   <Badge variant="default" className="w-fit">
@@ -295,17 +302,13 @@ function SettingsContent() {
                 <div className="space-y-2">
                   <Label>Member Since</Label>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(user?.created_at || '').toLocaleDateString()}
+                    {new Date(user?.created_at || "").toLocaleDateString()}
                   </p>
                 </div>
 
                 <Separator />
 
-                <Button 
-                  variant="outline" 
-                  onClick={signOut}
-                  className="w-full"
-                >
+                <Button variant="outline" onClick={signOut} className="w-full">
                   Sign Out
                 </Button>
               </CardContent>
@@ -361,13 +364,17 @@ function SettingsContent() {
                                 id="sheet-name"
                                 placeholder="My FormToSheets Data"
                                 value={newSheetName}
-                                onChange={(e) => setNewSheetName(e.target.value)}
+                                onChange={(e) =>
+                                  setNewSheetName(e.target.value)
+                                }
                               />
                             </div>
                             <div className="flex space-x-2">
                               <Button
                                 onClick={handleCreateNewSheet}
-                                disabled={connectingSheet || !newSheetName.trim()}
+                                disabled={
+                                  connectingSheet || !newSheetName.trim()
+                                }
                               >
                                 {connectingSheet ? (
                                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -387,7 +394,9 @@ function SettingsContent() {
                         ) : (
                           <div className="space-y-4">
                             <div>
-                              <Label htmlFor="sheet-url">Google Sheets URL</Label>
+                              <Label htmlFor="sheet-url">
+                                Google Sheets URL
+                              </Label>
                               <Input
                                 id="sheet-url"
                                 placeholder="https://docs.google.com/spreadsheets/d/..."
@@ -398,7 +407,9 @@ function SettingsContent() {
                             <div className="flex space-x-2">
                               <Button
                                 onClick={handleConnectExistingSheet}
-                                disabled={connectingSheet || !newSheetUrl.trim()}
+                                disabled={
+                                  connectingSheet || !newSheetUrl.trim()
+                                }
                               >
                                 {connectingSheet ? (
                                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -419,16 +430,21 @@ function SettingsContent() {
 
                         <div className="text-sm text-muted-foreground">
                           <p className="mb-2">
-                            Connect a new or existing Google Sheet to a form from the 'Integrations' tab in the form builder.
+                            Connect a new or existing Google Sheet to a form
+                            from the 'Integrations' tab in the form builder.
                           </p>
                           <div className="space-y-2">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={async () => {
-                                const { data: { session } } = await supabase.auth.getSession();
-                                console.log('Debug session:', session);
-                                alert(`Debug: Has provider token: ${!!session?.provider_token}, Has refresh token: ${!!session?.provider_refresh_token}`);
+                                const {
+                                  data: { session },
+                                } = await supabase.auth.getSession();
+                                console.log("Debug session:", session);
+                                alert(
+                                  `Debug: Has provider token: ${!!session?.provider_token}, Has refresh token: ${!!session?.provider_refresh_token}`,
+                                );
                               }}
                             >
                               Debug Session
@@ -444,9 +460,12 @@ function SettingsContent() {
                 {sheetConnections.length === 0 ? (
                   <div className="text-center py-8">
                     <Sheet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Google Sheets Connected</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      No Google Sheets Connected
+                    </h3>
                     <p className="text-muted-foreground mb-4">
-                      Connect a Google Sheet to automatically save form submissions
+                      Connect a Google Sheet to automatically save form
+                      submissions
                     </p>
                     <Button onClick={() => setShowConnectForm(true)}>
                       <Plus className="w-4 h-4 mr-2" />
@@ -463,34 +482,46 @@ function SettingsContent() {
                               <div className="flex items-center space-x-3">
                                 <Sheet className="h-5 w-5 text-green-600" />
                                 <div>
-                                  <h4 className="font-semibold">{connection.sheet_name}</h4>
+                                  <h4 className="font-semibold">
+                                    {connection.sheet_name}
+                                  </h4>
                                   <p className="text-sm text-muted-foreground">
-                                    Connected {new Date(connection.created_at).toLocaleDateString()}
+                                    Connected{" "}
+                                    {new Date(
+                                      connection.created_at,
+                                    ).toLocaleDateString()}
                                   </p>
                                   {connection.last_synced && (
                                     <p className="text-xs text-muted-foreground">
-                                      Last synced: {new Date(connection.last_synced).toLocaleString()}
+                                      Last synced:{" "}
+                                      {new Date(
+                                        connection.last_synced,
+                                      ).toLocaleString()}
                                     </p>
                                   )}
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center space-x-2">
-                              <Badge 
-                                variant={connection.is_active ? "default" : "secondary"}
+                              <Badge
+                                variant={
+                                  connection.is_active ? "default" : "secondary"
+                                }
                               >
                                 {connection.is_active ? "Active" : "Inactive"}
                               </Badge>
-                              
+
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => window.open(connection.sheet_url, '_blank')}
+                                onClick={() =>
+                                  window.open(connection.sheet_url, "_blank")
+                                }
                               >
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
-                              
+
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -498,11 +529,13 @@ function SettingsContent() {
                               >
                                 <RefreshCw className="w-4 h-4" />
                               </Button>
-                              
+
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleDeleteConnection(connection.id)}
+                                onClick={() =>
+                                  handleDeleteConnection(connection.id)
+                                }
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <Trash2 className="w-4 h-4" />

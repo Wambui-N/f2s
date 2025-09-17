@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Edit2, Check, X, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Edit2, Check, X, Save } from "lucide-react";
 
 interface InlineEditableTitleProps {
   title: string;
@@ -11,10 +11,16 @@ interface InlineEditableTitleProps {
   className?: string;
 }
 
-export function InlineEditableTitle({ title, onSave, className = '' }: InlineEditableTitleProps) {
+export function InlineEditableTitle({
+  title,
+  onSave,
+  className = "",
+}: InlineEditableTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "idle",
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -36,13 +42,13 @@ export function InlineEditableTitle({ title, onSave, className = '' }: InlineEdi
 
   const handleSave = () => {
     if (editValue.trim() && editValue !== title) {
-      setSaveStatus('saving');
+      setSaveStatus("saving");
       onSave(editValue.trim());
-      
+
       // Show "saved" status briefly
       setTimeout(() => {
-        setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
       }, 300);
     }
     setIsEditing(false);
@@ -54,9 +60,9 @@ export function InlineEditableTitle({ title, onSave, className = '' }: InlineEdi
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSave();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       handleCancel();
     }
   };
@@ -70,12 +76,12 @@ export function InlineEditableTitle({ title, onSave, className = '' }: InlineEdi
 
       // Set new timeout for debounced save
       saveTimeoutRef.current = setTimeout(() => {
-        setSaveStatus('saving');
+        setSaveStatus("saving");
         onSave(value.trim());
-        
+
         setTimeout(() => {
-          setSaveStatus('saved');
-          setTimeout(() => setSaveStatus('idle'), 2000);
+          setSaveStatus("saved");
+          setTimeout(() => setSaveStatus("idle"), 2000);
         }, 300);
       }, 800);
     }
@@ -129,13 +135,13 @@ export function InlineEditableTitle({ title, onSave, className = '' }: InlineEdi
       >
         <Edit2 size={14} />
       </Button>
-      {saveStatus === 'saving' && (
+      {saveStatus === "saving" && (
         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
           <Save size={12} className="animate-spin" />
           <span>Saving...</span>
         </div>
       )}
-      {saveStatus === 'saved' && (
+      {saveStatus === "saved" && (
         <div className="flex items-center space-x-1 text-sm text-green-600">
           <Check size={12} />
           <span>Saved</span>

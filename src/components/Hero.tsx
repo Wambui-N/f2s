@@ -12,7 +12,10 @@ export default function Hero() {
   };
 
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-background to-purple-50">
+    <section
+      id="hero"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-background to-purple-50"
+    >
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
@@ -23,7 +26,10 @@ export default function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Badge */}
-          <Badge variant="secondary" className="mb-8 px-4 py-2 text-sm font-medium">
+          <Badge
+            variant="secondary"
+            className="mb-8 px-4 py-2 text-sm font-medium"
+          >
             <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
             Google Sheets as your native database
           </Badge>
@@ -34,15 +40,14 @@ export default function Hero() {
               Beautiful Forms
             </span>
             <br />
-            <span className="text-foreground">
-              Meet Google Sheets
-            </span>
+            <span className="text-foreground">Meet Google Sheets</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
-            For small businesses and freelancers who live in Google Sheets. Create beautiful, 
-            branded forms that connect directly to your spreadsheets — no coding, no hassle.
+            For small businesses and freelancers who live in Google Sheets.
+            Create beautiful, branded forms that connect directly to your
+            spreadsheets — no coding, no hassle.
           </p>
 
           {/* CTA Buttons */}
@@ -67,15 +72,23 @@ export default function Hero() {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">Native</div>
-              <div className="text-muted-foreground">Google Sheets Integration</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                Native
+              </div>
+              <div className="text-muted-foreground">
+                Google Sheets Integration
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600 mb-2">Real-time</div>
+              <div className="text-3xl font-bold text-purple-600 mb-2">
+                Real-time
+              </div>
               <div className="text-muted-foreground">Two-way Sync</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">Beautiful</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                Beautiful
+              </div>
               <div className="text-muted-foreground">Branded Forms</div>
             </div>
           </div>

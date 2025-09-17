@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, Plus, FileText, Share2, AlertTriangle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { useFormStore } from '@/store/formStore';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Plus, FileText, Share2, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { useFormStore } from "@/store/formStore";
 
 interface CreateFormModalProps {
   isOpen: boolean;
@@ -22,13 +22,15 @@ interface CreateFormModalProps {
 }
 
 export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
-  const [formName, setFormName] = useState('');
+  const [formName, setFormName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
 
   const handleCreate = async () => {
+    if (isCreating) return; // Prevent double submission
+
     if (!formName || !user) {
       setError("Form name cannot be empty.");
       return;
@@ -39,9 +41,13 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
 
     try {
       // 1. Check for Google Sheets permissions
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.provider_token || !session?.provider_refresh_token) {
-        setError("Google Sheets permissions are required. Please connect your account in settings.");
+        setError(
+          "Google Sheets permissions are required. Please connect your account in settings.",
+        );
         // Optional: Trigger re-auth flow here
         // For now, we'll just show the error.
         setIsCreating(false);
@@ -49,9 +55,12 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
       }
 
       // 2. Create the Google Sheet
-      const sheetResponse = await fetch('/api/sheets/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      const sheetResponse = await fetch("/api/sheets/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           sheetName: formName,
           accessToken: session.provider_token,
@@ -73,25 +82,26 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
 
       // 5. Insert the form into the database, linking the sheet
       const { data: form, error: formError } = await supabase
-        .from('forms')
+        .from("forms")
         .insert({
           user_id: user.id,
           title: formName,
           form_data: newFormData,
-          status: 'draft',
+          status: "draft",
           default_sheet_connection_id: newConnectionId,
         })
-        .select('id')
+        .select("id")
         .single();
 
       if (formError || !form) {
-        throw new Error(formError?.message || "Failed to create the form in the database.");
+        throw new Error(
+          formError?.message || "Failed to create the form in the database.",
+        );
       }
-      
+
       // 6. Redirect to the new editor
       router.push(`/editor/${form.id}`);
       onClose();
-
     } catch (e: any) {
       setError(e.message);
       setIsCreating(false);
@@ -104,7 +114,8 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         <DialogHeader>
           <DialogTitle>Create a New Form</DialogTitle>
           <DialogDescription>
-            This will create a new form and a corresponding Google Sheet to store submissions.
+            This will create a new form and a corresponding Google Sheet to
+            store submissions.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -120,11 +131,19 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
           <div className="text-sm p-3 bg-muted/70 rounded-lg">
             <p className="flex items-start">
               <FileText className="h-4 w-4 mr-2 mt-1 shrink-0" />
-              <span>A new form named <span className="font-semibold">{formName || '...'}</span> will be created.</span>
+              <span>
+                A new form named{" "}
+                <span className="font-semibold">{formName || "..."}</span> will
+                be created.
+              </span>
             </p>
             <p className="flex items-start mt-2">
               <Share2 className="h-4 w-4 mr-2 mt-1 shrink-0" />
-              <span>A new Google Sheet named <span className="font-semibold">{formName || '...'}</span> will also be created and linked.</span>
+              <span>
+                A new Google Sheet named{" "}
+                <span className="font-semibold">{formName || "..."}</span> will
+                also be created and linked.
+              </span>
             </p>
           </div>
           {error && (
@@ -138,14 +157,16 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={handleCreate} disabled={!formName || isCreating}>
             {isCreating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Plus className="mr-2 h-4 w-4" />
             )}
-            {isCreating ? 'Creating...' : 'Create Form & Sheet'}
+            {isCreating ? "Creating..." : "Create Form & Sheet"}
           </Button>
         </DialogFooter>
       </DialogContent>

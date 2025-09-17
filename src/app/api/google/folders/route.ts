@@ -1,26 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { GoogleAPIClient } from '@/lib/google';
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { GoogleAPIClient } from "@/lib/google";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get user's Google tokens
     const { data: tokens } = await supabase
-      .from('user_google_tokens')
-      .select('*')
-      .eq('user_id', session.user.id)
+      .from("user_google_tokens")
+      .select("*")
+      .eq("user_id", session.user.id)
       .single();
 
     if (!tokens) {
-      return NextResponse.json({ error: 'Google account not connected' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Google account not connected" },
+        { status: 400 },
+      );
     }
 
     const googleClient = new GoogleAPIClient({
@@ -33,17 +38,17 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      folders: folders.map(folder => ({
+      folders: folders.map((folder) => ({
         id: folder.id,
         name: folder.name,
         parents: folder.parents,
       })),
     });
   } catch (error) {
-    console.error('Error fetching folders:', error);
+    console.error("Error fetching folders:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch folders' },
-      { status: 500 }
+      { error: "Failed to fetch folders" },
+      { status: 500 },
     );
   }
 }
@@ -51,27 +56,32 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { name, parentId } = await request.json();
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     // Get user's Google tokens
     const { data: tokens } = await supabase
-      .from('user_google_tokens')
-      .select('*')
-      .eq('user_id', session.user.id)
+      .from("user_google_tokens")
+      .select("*")
+      .eq("user_id", session.user.id)
       .single();
 
     if (!tokens) {
-      return NextResponse.json({ error: 'Google account not connected' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Google account not connected" },
+        { status: 400 },
+      );
     }
 
     const googleClient = new GoogleAPIClient({
@@ -87,10 +97,10 @@ export async function POST(request: NextRequest) {
       folder,
     });
   } catch (error) {
-    console.error('Error creating folder:', error);
+    console.error("Error creating folder:", error);
     return NextResponse.json(
-      { error: 'Failed to create folder' },
-      { status: 500 }
+      { error: "Failed to create folder" },
+      { status: 500 },
     );
   }
 }

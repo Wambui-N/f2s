@@ -1,13 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormField, ConditionalRule } from './types';
-import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FormField, ConditionalRule } from "./types";
+import { Plus, Trash2, Eye, EyeOff } from "lucide-react";
 
 interface ConditionalLogicProps {
   fields: FormField[];
@@ -15,47 +21,53 @@ interface ConditionalLogicProps {
   onUpdateRules: (rules: ConditionalRule[]) => void;
 }
 
-export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLogicProps) {
+export function ConditionalLogic({
+  fields,
+  rules,
+  onUpdateRules,
+}: ConditionalLogicProps) {
   const [editingRule, setEditingRule] = useState<ConditionalRule | null>(null);
 
   const addRule = () => {
     const newRule: ConditionalRule = {
       id: `rule_${Date.now()}`,
-      conditionField: fields[0]?.id || '',
-      operator: 'equals',
-      value: '',
-      action: 'show',
-      targetField: fields[1]?.id || '',
-      enabled: true
+      conditionField: fields[0]?.id || "",
+      operator: "equals",
+      value: "",
+      action: "show",
+      targetField: fields[1]?.id || "",
+      enabled: true,
     };
     onUpdateRules([...rules, newRule]);
   };
 
   const updateRule = (ruleId: string, updates: Partial<ConditionalRule>) => {
-    const updatedRules = rules.map(rule => 
-      rule.id === ruleId ? { ...rule, ...updates } : rule
+    const updatedRules = rules.map((rule) =>
+      rule.id === ruleId ? { ...rule, ...updates } : rule,
     );
     onUpdateRules(updatedRules);
   };
 
   const deleteRule = (ruleId: string) => {
-    onUpdateRules(rules.filter(rule => rule.id !== ruleId));
+    onUpdateRules(rules.filter((rule) => rule.id !== ruleId));
   };
 
   const toggleRule = (ruleId: string) => {
-    updateRule(ruleId, { enabled: !rules.find(r => r.id === ruleId)?.enabled });
+    updateRule(ruleId, {
+      enabled: !rules.find((r) => r.id === ruleId)?.enabled,
+    });
   };
 
   const getFieldLabel = (fieldId: string) => {
-    return fields.find(f => f.id === fieldId)?.label || 'Unknown Field';
+    return fields.find((f) => f.id === fieldId)?.label || "Unknown Field";
   };
 
   const getOperatorLabel = (operator: string) => {
     const labels = {
-      equals: 'equals',
-      contains: 'contains',
-      not_empty: 'is not empty',
-      empty: 'is empty'
+      equals: "equals",
+      contains: "contains",
+      not_empty: "is not empty",
+      empty: "is empty",
     };
     return labels[operator as keyof typeof labels] || operator;
   };
@@ -76,11 +88,16 @@ export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLo
           {rules.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No conditional logic rules yet.</p>
-              <p className="text-sm">Add rules to show/hide fields based on user responses.</p>
+              <p className="text-sm">
+                Add rules to show/hide fields based on user responses.
+              </p>
             </div>
           ) : (
             rules.map((rule) => (
-              <Card key={rule.id} className={`p-4 ${!rule.enabled ? 'opacity-50' : ''}`}>
+              <Card
+                key={rule.id}
+                className={`p-4 ${!rule.enabled ? "opacity-50" : ""}`}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     <Button
@@ -92,7 +109,7 @@ export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLo
                       {rule.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
                     </Button>
                     <span className="text-sm font-medium">
-                      {rule.enabled ? 'Active' : 'Disabled'}
+                      {rule.enabled ? "Active" : "Disabled"}
                     </span>
                   </div>
                   <Button
@@ -110,7 +127,9 @@ export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLo
                     <span className="font-medium">If</span>
                     <Select
                       value={rule.conditionField}
-                      onValueChange={(value) => updateRule(rule.id, { conditionField: value })}
+                      onValueChange={(value) =>
+                        updateRule(rule.id, { conditionField: value })
+                      }
                     >
                       <SelectTrigger className="w-40">
                         <SelectValue />
@@ -128,7 +147,9 @@ export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLo
                   <div className="flex items-center space-x-2 text-sm">
                     <Select
                       value={rule.operator}
-                      onValueChange={(value: any) => updateRule(rule.id, { operator: value })}
+                      onValueChange={(value: any) =>
+                        updateRule(rule.id, { operator: value })
+                      }
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue />
@@ -142,22 +163,27 @@ export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLo
                     </Select>
                   </div>
 
-                  {rule.operator !== 'not_empty' && rule.operator !== 'empty' && (
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Input
-                        value={rule.value}
-                        onChange={(e) => updateRule(rule.id, { value: e.target.value })}
-                        placeholder="Enter value"
-                        className="w-40"
-                      />
-                    </div>
-                  )}
+                  {rule.operator !== "not_empty" &&
+                    rule.operator !== "empty" && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <Input
+                          value={rule.value}
+                          onChange={(e) =>
+                            updateRule(rule.id, { value: e.target.value })
+                          }
+                          placeholder="Enter value"
+                          className="w-40"
+                        />
+                      </div>
+                    )}
 
                   <div className="flex items-center space-x-2 text-sm">
                     <span className="font-medium">then</span>
                     <Select
                       value={rule.action}
-                      onValueChange={(value: any) => updateRule(rule.id, { action: value })}
+                      onValueChange={(value: any) =>
+                        updateRule(rule.id, { action: value })
+                      }
                     >
                       <SelectTrigger className="w-20">
                         <SelectValue />
@@ -169,7 +195,9 @@ export function ConditionalLogic({ fields, rules, onUpdateRules }: ConditionalLo
                     </Select>
                     <Select
                       value={rule.targetField}
-                      onValueChange={(value) => updateRule(rule.id, { targetField: value })}
+                      onValueChange={(value) =>
+                        updateRule(rule.id, { targetField: value })
+                      }
                     >
                       <SelectTrigger className="w-40">
                         <SelectValue />

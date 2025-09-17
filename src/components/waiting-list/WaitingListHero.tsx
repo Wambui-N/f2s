@@ -1,46 +1,46 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { CheckCircle, AlertCircle, FileText } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CheckCircle, AlertCircle, FileText } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export function WaitingListHero() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       // Sign up user with Supabase (no email confirmation required)
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email,
-        password: 'temp_password_' + Math.random().toString(36).substr(2, 9), // Temporary password
+        password: "temp_password_" + Math.random().toString(36).substr(2, 9), // Temporary password
         options: {
           emailRedirectTo: undefined, // Disable email confirmation
-        }
+        },
       });
 
       if (signUpError) {
         // If user already exists, that's fine - they're already on the waitlist
-        if (signUpError.message.includes('already registered')) {
+        if (signUpError.message.includes("already registered")) {
           setIsSubmitted(true);
         } else {
-          setError('Something went wrong. Please try again.');
+          setError("Something went wrong. Please try again.");
         }
       } else {
         setIsSubmitted(true);
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -51,24 +51,23 @@ export function WaitingListHero() {
       {/* Subtle background decoration */}
       <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-[#FCE8E1] to-[#F9C79B] rounded-full opacity-20 blur-3xl"></div>
       <div className="absolute bottom-20 left-10 w-80 h-80 bg-gradient-to-tr from-[#F9C79B] to-[#FCE8E1] rounded-full opacity-15 blur-2xl"></div>
-      
+
       {/* Main Content Card */}
       <div className="relative z-10 w-full max-w-4xl">
         <div className="bg-white rounded-3xl shadow-2xl border-2 border-dotted border-[#E5D5C8] overflow-hidden">
           <div className="flex flex-col lg:flex-row min-h-[500px]">
-            
             {/* Left Panel - CTA Section */}
             <div className="lg:w-2/5 bg-gradient-to-b from-[#FCE8E1] to-[#F9C79B] p-12 flex flex-col justify-center relative">
               {/* Subtle glow effect */}
               <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F9C79B] to-transparent opacity-30"></div>
-              
+
               <div className="relative z-10">
                 <h1 className="text-4xl lg:text-5xl font-bold text-[#4A3B30] leading-tight mb-4">
                   Join
                   <br />
                   Waitlist
                 </h1>
-                
+
                 <p className="text-[#4A3B30] text-sm mb-6 font-medium">
                   No payment required*
                 </p>
@@ -91,12 +90,12 @@ export function WaitingListHero() {
                         <span>{error}</span>
                       </div>
                     )}
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full bg-white text-[#4A3B30] hover:bg-[#F8F6F3] border border-[#D4C4B0] rounded-xl font-medium py-3 shadow-sm"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Joining...' : 'Join Waitlist'}
+                      {isLoading ? "Joining..." : "Join Waitlist"}
                     </Button>
                   </form>
                 ) : (
@@ -112,7 +111,8 @@ export function WaitingListHero() {
                 )}
 
                 <p className="text-[#4A3B30] text-sm mt-8 leading-relaxed">
-                From amateur forms to professional conversions, we make you look like the market leader.
+                  From amateur forms to professional conversions, we make you
+                  look like the market leader.
                 </p>
               </div>
             </div>
@@ -122,45 +122,58 @@ export function WaitingListHero() {
               <div className="space-y-4">
                 <div className="flex items-center space-x-2 mb-4">
                   <FileText className="h-8 w-8 text-[#4A3B30]" />
-                  <span className="text-2xl font-bold text-[#4A3B30]">FormToSheets</span>
+                  <span className="text-2xl font-bold text-[#4A3B30]">
+                    FormToSheets
+                  </span>
                 </div>
-                
+
                 <div className="space-y-4">
                   <p className="text-[#4A3B30] text-lg font-medium leading-relaxed">
-                  While your competitors lose leads, you could be closing deals.
+                    While your competitors lose leads, you could be closing
+                    deals.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <p className="text-[#4A3B30] text-base font-medium">
                       With FormToSheets you get:
                     </p>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-[#4A3B30] rounded-full mt-2 flex-shrink-0"></div>
                         <p className="text-[#4A3B30] text-sm leading-relaxed">
-                          <span className="font-medium">Seamless Google Sheets sync</span> → your spreadsheet becomes your CRM.
+                          <span className="font-medium">
+                            Seamless Google Sheets sync
+                          </span>{" "}
+                          → your spreadsheet becomes your CRM.
                         </p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-[#4A3B30] rounded-full mt-2 flex-shrink-0"></div>
                         <p className="text-[#4A3B30] text-sm leading-relaxed">
-                          <span className="font-medium">Beautiful, mobile-friendly forms</span> → designed to impress and convert.
+                          <span className="font-medium">
+                            Beautiful, mobile-friendly forms
+                          </span>{" "}
+                          → designed to impress and convert.
                         </p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-[#4A3B30] rounded-full mt-2 flex-shrink-0"></div>
                         <p className="text-[#4A3B30] text-sm leading-relaxed">
-                          <span className="font-medium">Smart automation</span> → save hours on manual data entry.
+                          <span className="font-medium">Smart automation</span>{" "}
+                          → save hours on manual data entry.
                         </p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-[#4A3B30] rounded-full mt-2 flex-shrink-0"></div>
                         <p className="text-[#4A3B30] text-sm leading-relaxed">
-                          <span className="font-medium">Easy setup, zero code</span> → if you can copy-paste, you can use it.
+                          <span className="font-medium">
+                            Easy setup, zero code
+                          </span>{" "}
+                          → if you can copy-paste, you can use it.
                         </p>
                       </div>
                     </div>
@@ -171,7 +184,9 @@ export function WaitingListHero() {
                       Why join today?
                     </p>
                     <p className="text-[#4A3B30] text-sm leading-relaxed">
-                      Early access means you'll be the first to test-drive features, shape the roadmap, and lock in lifetime perks before anyone else.
+                      Early access means you'll be the first to test-drive
+                      features, shape the roadmap, and lock in lifetime perks
+                      before anyone else.
                     </p>
                   </div>
                 </div>
@@ -179,10 +194,16 @@ export function WaitingListHero() {
                 <div className="pt-4">
                   <div className="text-right">
                     <p className="text-[#4A3B30] font-medium text-sm">
-                      <span className="text-[#4A3B30] font-medium">FormToSheets</span>
+                      <span className="text-[#4A3B30] font-medium">
+                        FormToSheets
+                      </span>
                     </p>
                     <p className="text-[#4A3B30] text-sm mt-1">
-                      {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}
+                      {new Date().toLocaleDateString("en-US", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "numeric",
+                      })}
                     </p>
                   </div>
                 </div>

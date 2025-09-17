@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { FormField, FieldTypes } from './types';
-import { X, Plus, Trash2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { FormField, FieldTypes } from "./types";
+import { X, Plus, Trash2 } from "lucide-react";
 
 interface FieldEditorProps {
   field: FormField;
@@ -16,7 +16,12 @@ interface FieldEditorProps {
   onClose: () => void;
 }
 
-export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorProps) {
+export function FieldEditor({
+  field,
+  onUpdate,
+  onDelete,
+  onClose,
+}: FieldEditorProps) {
   const [editedField, setEditedField] = useState<FormField>(field);
 
   const handleSave = () => {
@@ -25,7 +30,7 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
   };
 
   const addOption = () => {
-    const newOptions = [...(editedField.options || []), 'New Option'];
+    const newOptions = [...(editedField.options || []), "New Option"];
     setEditedField({ ...editedField, options: newOptions });
   };
 
@@ -41,7 +46,9 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
     setEditedField({ ...editedField, options: newOptions });
   };
 
-  const needsOptions = ['select', 'radio', 'checkbox'].includes(editedField.type);
+  const needsOptions = ["select", "radio", "checkbox"].includes(
+    editedField.type,
+  );
 
   return (
     <Card className="w-96">
@@ -58,7 +65,9 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
           <Input
             id="label"
             value={editedField.label}
-            onChange={(e) => setEditedField({ ...editedField, label: e.target.value })}
+            onChange={(e) =>
+              setEditedField({ ...editedField, label: e.target.value })
+            }
             placeholder="Enter field label"
           />
         </div>
@@ -68,8 +77,10 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
           <Label htmlFor="placeholder">Placeholder Text</Label>
           <Input
             id="placeholder"
-            value={editedField.placeholder || ''}
-            onChange={(e) => setEditedField({ ...editedField, placeholder: e.target.value })}
+            value={editedField.placeholder || ""}
+            onChange={(e) =>
+              setEditedField({ ...editedField, placeholder: e.target.value })
+            }
             placeholder="Enter placeholder text"
           />
         </div>
@@ -80,7 +91,9 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
           <Input
             id="columnName"
             value={editedField.columnName}
-            onChange={(e) => setEditedField({ ...editedField, columnName: e.target.value })}
+            onChange={(e) =>
+              setEditedField({ ...editedField, columnName: e.target.value })
+            }
             placeholder="Column name in Google Sheets"
           />
         </div>
@@ -90,8 +103,14 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
           <Label htmlFor="defaultValue">Default Value</Label>
           <Input
             id="defaultValue"
-            value={typeof editedField.defaultValue === 'string' ? editedField.defaultValue : String(editedField.defaultValue || '')}
-            onChange={(e) => setEditedField({ ...editedField, defaultValue: e.target.value })}
+            value={
+              typeof editedField.defaultValue === "string"
+                ? editedField.defaultValue
+                : String(editedField.defaultValue || "")
+            }
+            onChange={(e) =>
+              setEditedField({ ...editedField, defaultValue: e.target.value })
+            }
             placeholder="Default value (optional)"
           />
         </div>
@@ -132,39 +151,51 @@ export function FieldEditor({ field, onUpdate, onDelete, onClose }: FieldEditorP
         )}
 
         {/* Validation Rules */}
-        {editedField.type === 'number' && (
+        {editedField.type === "number" && (
           <div className="space-y-2">
             <Label>Validation Rules</Label>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="min" className="text-xs">Min Value</Label>
+                <Label htmlFor="min" className="text-xs">
+                  Min Value
+                </Label>
                 <Input
                   id="min"
                   type="number"
-                  value={editedField.validation?.min || ''}
-                  onChange={(e) => setEditedField({
-                    ...editedField,
-                    validation: {
-                      ...editedField.validation,
-                      min: e.target.value ? Number(e.target.value) : undefined
-                    }
-                  })}
+                  value={editedField.validation?.min || ""}
+                  onChange={(e) =>
+                    setEditedField({
+                      ...editedField,
+                      validation: {
+                        ...editedField.validation,
+                        min: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      },
+                    })
+                  }
                   placeholder="Min"
                 />
               </div>
               <div>
-                <Label htmlFor="max" className="text-xs">Max Value</Label>
+                <Label htmlFor="max" className="text-xs">
+                  Max Value
+                </Label>
                 <Input
                   id="max"
                   type="number"
-                  value={editedField.validation?.max || ''}
-                  onChange={(e) => setEditedField({
-                    ...editedField,
-                    validation: {
-                      ...editedField.validation,
-                      max: e.target.value ? Number(e.target.value) : undefined
-                    }
-                  })}
+                  value={editedField.validation?.max || ""}
+                  onChange={(e) =>
+                    setEditedField({
+                      ...editedField,
+                      validation: {
+                        ...editedField.validation,
+                        max: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      },
+                    })
+                  }
                   placeholder="Max"
                 />
               </div>
