@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sheet, Plus, Link, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { 
+  Sheet, 
+  Plus, 
+  Link, 
+  AlertCircle, 
+  ExternalLink,
+  Zap,
+  CheckCircle,
+  RefreshCw,
+  Sparkles
+} from "lucide-react";
 import { FormData } from "./types";
 import {
   Dialog,
@@ -19,14 +33,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { SheetConnection } from "@/lib/types";
 
 interface IntegrationsPanelProps {
   formData: FormData;
-  onConnectionUpdate: () => void; // Callback to refresh form data
+  onConnectionUpdate: () => void;
 }
 
 export function IntegrationsPanel({
@@ -37,107 +51,105 @@ export function IntegrationsPanel({
   const [connection, setConnection] = useState<SheetConnection | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [isConnecting, setIsConnecting] = useState(false);
   const [showConnectOptions, setShowConnectOptions] = useState(false);
-  const [existingConnections, setExistingConnections] = useState<
-    SheetConnection[]
-  >([]);
+  const [existingConnections, setExistingConnections] = useState<SheetConnection[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
+  const [newSheetName, setNewSheetName] = useState("");
 
   useEffect(() => {
     const fetchConnectionStatus = async () => {
       if (!formData.id || !user) return;
       setIsLoading(true);
 
-      const { data, error: connectionError } = await supabase
-        .from("forms")
-        .select(
-          `
-          id,
-          sheet_name,
-          sheet_url,
-          is_active,
-          created_at,
-          updated_at,
-          last_synced,
-          sheet_id,
-          user_id
-        `
-        )
-        .eq("id", formData.default_sheet_connection_id)
-        .single();
+      try {
+        // Get form with sheet connection
+        const { data: formWithConnection, error: formError } = await supabase
+          .from("forms")
+          .select(`
+            id,
+            default_sheet_connection_id,
+            sheet_connections!forms_default_sheet_connection_id_fkey (
+              id, sheet_name, sheet_url, is_active, created_at, last_synced
+            )
+          `)
+          .eq("id", formData.id)
+          .single();
 
-      if (connectionError) throw connectionError;
-      setConnection(data as SheetConnection | null);
-    };
+        if (formError) throw formError;
+        
+        setConnection(formWithConnection?.sheet_connections || null);
 
-    const fetchExistingConnections = async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from("sheet_connections")
-        .select(
-          "id, user_id, form_id, sheet_id, sheet_name, sheet_url, is_active, created_at, updated_at, access_token, refresh_token, expires_at, last_synced"
-        )
-        .eq("user_id", user.id);
+        // Fetch user's existing connections
+        const { data: connections, error: connectionsError } = await supabase
+          .from("sheet_connections")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("is_active", true);
 
-      if (error) throw error;
-      setExistingConnections((data as SheetConnection[]) || []);
+        if (connectionsError) throw connectionsError;
+        setExistingConnections(connections || []);
+
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchConnectionStatus();
-    fetchExistingConnections();
   }, [formData.id, user]);
 
   const handleCreateAndConnect = async () => {
     setIsConnecting(true);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (!session?.provider_token) {
-      alert(
-        "Google account not connected or permissions missing. Please connect it in settings.",
-      );
-      setIsConnecting(false);
-      return;
-    }
-
-    const response = await fetch("/api/sheets/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        sheetName: `${formData.title} - Submissions`,
-        accessToken: session.provider_token,
-        refreshToken: session.provider_refresh_token,
-      }),
-    });
-
-    const result = await response.json();
-    if (result.success) {
-      const { data: newConnection } = await supabase
-        .from("sheet_connections")
-        .select("id")
-        .eq("sheet_id", result.sheetId)
-        .single();
-
-      if (newConnection) {
-        await linkFormToSheet(newConnection.id);
+      if (!session?.provider_token) {
+        throw new Error("Google account not connected. Please connect in settings.");
       }
-    } else {
-      alert(`Error: ${result.error}`);
+
+      const sheetName = newSheetName.trim() || `${formData.title} - Submissions`;
+
+      const response = await fetch("/api/sheets/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          sheetName,
+          accessToken: session.provider_token,
+          refreshToken: session.provider_refresh_token,
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create Google Sheet.");
+      }
+
+      await linkFormToSheet(result.connection.id);
+      
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsConnecting(false);
     }
-    setIsConnecting(false);
   };
 
   const handleLinkExisting = async () => {
     if (!selectedSheet) return;
     setIsConnecting(true);
-    await linkFormToSheet(selectedSheet);
-    setIsConnecting(false);
+    
+    try {
+      await linkFormToSheet(selectedSheet);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const linkFormToSheet = async (connectionId: string) => {
@@ -147,178 +159,335 @@ export function IntegrationsPanel({
       .eq("id", formData.id);
 
     if (error) {
-      alert("Failed to link sheet to form.");
-    } else {
-      setShowConnectOptions(false);
-      onConnectionUpdate(); // This will trigger a re-fetch in the parent
+      throw new Error("Failed to link sheet to form.");
     }
+
+    setShowConnectOptions(false);
+    setNewSheetName("");
+    setSelectedSheet("");
+    onConnectionUpdate();
   };
 
   const handleDisconnect = async () => {
     if (!connection) return;
+    
     const { error } = await supabase
       .from("forms")
       .update({ default_sheet_connection_id: null })
       .eq("id", formData.id);
 
     if (error) {
-      alert("Failed to disconnect sheet.");
+      setError("Failed to disconnect sheet.");
     } else {
       onConnectionUpdate();
     }
   };
 
-  const handleShowConnect = async () => {
-    // Fetch user's existing connections to offer them as choices
-    const { data } = await supabase
-      .from("sheet_connections")
-      .select("*")
-      .eq("user_id", user?.id);
-
-    setExistingConnections((data as SheetConnection[]) || []);
-    setShowConnectOptions(true);
-  };
-
   if (isLoading) {
-    return <div>Loading connection status...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" text="Loading integration status..." />
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-4" />
+          <p className="text-red-800 font-medium">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => setError(null)}
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <Card className="border-none shadow-none">
-      <CardHeader>
-        <CardTitle>Google Sheets Integration</CardTitle>
-        <p className="text-muted-foreground pt-2">
-          Connect a Google Sheet to automatically send form submissions to a
-          spreadsheet in real-time.
-        </p>
-      </CardHeader>
-      <CardContent>
-        {connection ? (
-          <Card className="bg-muted/40">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="bg-white p-3 rounded-lg border">
-                    <Sheet className="h-6 w-6 text-green-600" />
+    <div className="space-y-6">
+      <Card className="shadow-lg border-0">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+          <CardTitle className="flex items-center text-xl">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+            Google Sheets Integration
+          </CardTitle>
+          <p className="text-muted-foreground pt-2 leading-relaxed">
+            Connect a Google Sheet to automatically save form submissions in real-time. 
+            Your data will be organized and accessible instantly.
+          </p>
+        </CardHeader>
+        
+        <CardContent className="p-6">
+          {connection ? (
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Sheet className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="font-bold text-lg text-green-900">
+                          {connection.sheet_name}
+                        </h3>
+                        <StatusBadge status="success" text="Connected" />
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-green-700">
+                        <span>Real-time sync active</span>
+                        {connection.last_synced && (
+                          <span>
+                            Last synced: {new Date(connection.last_synced).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(connection.sheet_url, "_blank")}
+                      className="hover:bg-green-50 hover:text-green-700"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Open Sheet
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleDisconnect}
+                      className="hover:bg-red-50 hover:text-red-700"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <EmptyState
+              icon={<AlertCircle className="h-12 w-12 text-muted-foreground" />}
+              title="No Google Sheet Connected"
+              description="Connect a Google Sheet to automatically save form submissions and keep your data organized in real-time."
+              action={{
+                label: "Connect Google Sheet",
+                onClick: () => setShowConnectOptions(true)
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Connection Options Dialog */}
+      <Dialog open={showConnectOptions} onOpenChange={setShowConnectOptions}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Sheet className="w-5 h-5 mr-2" />
+              Connect to Google Sheets
+            </DialogTitle>
+            <DialogDescription>
+              Choose how you'd like to connect your form to Google Sheets. 
+              We recommend creating a new sheet for better organization.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Create New Sheet Option */}
+            <Card className="border-2 border-blue-200 bg-blue-50/30">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3 mb-4">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-lg">{connection.sheet_name}</p>
-                    <a
-                      href={connection.sheet_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:underline"
-                    >
-                      View Sheet
-                    </a>
+                    <h4 className="font-semibold text-blue-900">Create New Sheet</h4>
+                    <p className="text-sm text-blue-700">
+                      Recommended: Creates a dedicated sheet for this form
+                    </p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={handleDisconnect}>
-                  Disconnect
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-2 border-dashed bg-transparent">
-            <CardContent className="p-8 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="bg-muted p-4 rounded-full">
-                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="new-sheet-name" className="text-sm font-medium">
+                      Sheet Name
+                    </Label>
+                    <Input
+                      id="new-sheet-name"
+                      value={newSheetName}
+                      onChange={(e) => setNewSheetName(e.target.value)}
+                      placeholder={`${formData.title} - Submissions`}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <Button 
+                    onClick={handleCreateAndConnect} 
+                    disabled={isConnecting}
+                    className="w-full btn-primary"
+                  >
+                    {isConnecting ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Create & Connect New Sheet
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Not Connected</h3>
-              <p className="text-muted-foreground mb-6">
-                Connect a Google Sheet to get started.
-              </p>
-              <Button onClick={handleShowConnect}>
-                <Plus className="mr-2 h-4 w-4" />
-                Connect to Google Sheets
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
 
-        <Dialog open={showConnectOptions} onOpenChange={setShowConnectOptions}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Connect to Google Sheets</DialogTitle>
-              <DialogDescription>
-                Create a new sheet or link to an existing one. We recommend
-                creating a new sheet for each form.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <h4 className="font-semibold">Create a new Google Sheet</h4>
-              <p className="text-sm text-muted-foreground">
-                This will create a new sheet in your Google Drive named after
-                your form.
-              </p>
-              <Button onClick={handleCreateAndConnect} disabled={isConnecting}>
-                {isConnecting ? (
-                  "Creating..."
+            {/* Link Existing Sheet Option */}
+            <Card className="border border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3 mb-4">
+                  <div className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center">
+                    <Link className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Link Existing Sheet</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Connect to a sheet you've already created
+                    </p>
+                  </div>
+                </div>
+                
+                {existingConnections.length > 0 ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium">Select Sheet</Label>
+                      <Select onValueChange={setSelectedSheet} value={selectedSheet}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Choose a sheet..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {existingConnections.map((conn) => (
+                            <SelectItem key={conn.id} value={conn.id}>
+                              <div className="flex items-center space-x-2">
+                                <Sheet className="w-4 h-4" />
+                                <span>{conn.sheet_name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button
+                      onClick={handleLinkExisting}
+                      disabled={!selectedSheet || isConnecting}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {isConnecting ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Linking...
+                        </>
+                      ) : (
+                        <>
+                          <Link className="w-4 h-4 mr-2" />
+                          Link Selected Sheet
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create & Connect New Sheet
-                  </>
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No existing connections found
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open("/settings", "_blank")}
+                    >
+                      Manage Connections
+                    </Button>
+                  </div>
                 )}
-              </Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConnectOptions(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-              <Separator />
-
-              <h4 className="font-semibold">Link to an existing sheet</h4>
-              <p className="text-sm text-muted-foreground">
-                Choose from sheets you've previously connected to your account.
-              </p>
-              {existingConnections.length > 0 ? (
-                <Select onValueChange={setSelectedSheet}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a sheet..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {existingConnections.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.sheet_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  No existing connections found. Connect one in your account
-                  settings.
+      {/* Integration Benefits */}
+      <Card className="shadow-lg border-0">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Sparkles className="w-5 h-5 mr-2" />
+            Integration Benefits
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+              <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-900">Real-time Sync</h4>
+                <p className="text-xs text-blue-700">
+                  Submissions appear instantly in your Google Sheet
                 </p>
-              )}
+              </div>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowConnectOptions(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleLinkExisting}
-                disabled={!selectedSheet || isConnecting}
-              >
-                {isConnecting ? (
-                  "Linking..."
-                ) : (
-                  <>
-                    <Link className="mr-2 h-4 w-4" />
-                    Link Selected Sheet
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+            
+            <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-green-900">Auto Organization</h4>
+                <p className="text-xs text-green-700">
+                  Data is automatically formatted and organized
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
+              <RefreshCw className="w-5 h-5 text-purple-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-purple-900">Two-way Sync</h4>
+                <p className="text-xs text-purple-700">
+                  Edit in Sheets, see changes in your form
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3 p-3 bg-orange-50 rounded-lg">
+              <Sheet className="w-5 h-5 text-orange-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-orange-900">Native Experience</h4>
+                <p className="text-xs text-orange-700">
+                  Works like Google Sheets is your database
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

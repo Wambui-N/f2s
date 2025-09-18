@@ -3,8 +3,20 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FormData, FormField } from "./types";
-import { Smartphone, Monitor, RefreshCw, Play } from "lucide-react";
+import { 
+  Smartphone, 
+  Monitor, 
+  RefreshCw, 
+  Play, 
+  CheckCircle, 
+  AlertCircle,
+  Sparkles,
+  Zap,
+  Shield
+} from "lucide-react";
 import { generateMockData } from "@/lib/mockData";
 
 interface FormPreviewProps {
@@ -24,14 +36,10 @@ export function FormPreview({
 }: FormPreviewProps) {
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [formValues, setFormValues] = useState<Record<string, any>>({});
-  const [fileInputs, setFileInputs] = useState<Record<string, FileList | null>>(
-    {}
-  );
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
-    {}
-  );
+  const [fileInputs, setFileInputs] = useState<Record<string, FileList | null>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
     if (isTestMode) {
@@ -40,86 +48,34 @@ export function FormPreview({
   }, [isTestMode, formData.fields]);
 
   const generateSampleData = () => {
-    const sample: Record<string, any> = {};
-
-    formData.fields.forEach((field) => {
-      switch (field.type) {
-        case "text":
-          sample[field.id] = field.label.includes("Name")
-            ? "John Smith"
-            : field.label.includes("Company")
-              ? "ABC Company"
-              : "Sample Text";
-          break;
-        case "email":
-          sample[field.id] = "john@example.com";
-          break;
-        case "textarea":
-          sample[field.id] =
-            "This is a sample message describing the project requirements and goals...";
-          break;
-        case "number":
-          sample[field.id] = field.label.includes("Budget") ? "2500" : "42";
-          break;
-        case "date":
-          sample[field.id] = "2024-12-15";
-          break;
-        case "select":
-          sample[field.id] = field.options?.[0] || "Option 1";
-          break;
-        case "radio":
-          sample[field.id] = field.options?.[0] || "Option 1";
-          break;
-        case "checkbox":
-          sample[field.id] = field.options?.slice(0, 2) || [
-            "Option 1",
-            "Option 2",
-          ];
-          break;
-        case "file":
-          sample[field.id] = "sample-document.pdf";
-          break;
-        case "hidden":
-          sample[field.id] = "hidden-value";
-          break;
-        default:
-          sample[field.id] = "";
-      }
-    });
-
+    const sample = generateMockData(formData.fields);
     setFormValues(sample);
     onSampleData?.();
   };
 
-  const handleInputChange = (
-    fieldId: string,
-    value: any,
-    isFile = false
-  ) => {
+  const handleInputChange = (fieldId: string, value: any, isFile = false) => {
     if (isFile) {
       setFileInputs((prev) => ({ ...prev, [fieldId]: value }));
     } else {
-      setFormValues((prev) => ({
-        ...prev,
-        [fieldId]: value,
-      }));
+      setFormValues((prev) => ({ ...prev, [fieldId]: value }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (isPreview) {
-      // In preview mode, just call the onSubmit callback
-      onSubmit?.(formValues);
-      return;
-    }
-
     setIsSubmitting(true);
     setSubmitMessage(null);
+    setSubmitStatus(null);
 
     try {
-      // 1. Handle file uploads first
+      if (isPreview) {
+        onSubmit?.(formValues);
+        setSubmitStatus("success");
+        setSubmitMessage("Form submitted successfully! (Preview mode)");
+        return;
+      }
+
+      // Handle file uploads
       const uploadedFileUrls: Record<string, string[]> = {};
 
       for (const field of formData.fields) {
@@ -127,14 +83,12 @@ export function FormPreview({
           const files = Array.from(fileInputs[field.id] as FileList);
           const urls = [];
 
-          for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+          for (const file of files) {
             const uploadFormData = new FormData();
             uploadFormData.append("file", file);
             uploadFormData.append("formId", formData.id);
             uploadFormData.append("fieldId", field.id);
 
-            // TODO: Add onUploadProgress to fetch call if you want progress bars
             const response = await fetch("/api/upload", {
               method: "POST",
               body: uploadFormData,
@@ -151,31 +105,25 @@ export function FormPreview({
         }
       }
 
-      // 2. Merge uploaded file URLs into the form submission data
+      // Merge uploaded file URLs
       const submissionData = { ...formValues };
       for (const fieldId in uploadedFileUrls) {
         submissionData[fieldId] = uploadedFileUrls[fieldId].join(", ");
       }
 
-      // 3. Create field mappings
+      // Create field mappings
       const fieldMappings: Record<string, string> = {};
       formData.fields.forEach((field) => {
-        if (
-          field.type !== "divider" &&
-          field.type !== "header" &&
-          field.type !== "richtext"
-        ) {
+        if (!["divider", "header", "richtext"].includes(field.type)) {
           fieldMappings[field.id] = field.label;
         }
       });
 
       const response = await fetch(`/api/forms/${formData.id}/submit`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          formData: submissionData, // Use data with file URLs
+          formData: submissionData,
           fieldMappings,
         }),
       });
@@ -183,15 +131,20 @@ export function FormPreview({
       const result = await response.json();
 
       if (result.success) {
-        setSubmitMessage(
-          result.synced ? `✅ ${result.message}` : `⚠️ ${result.message}`,
+        setSubmitStatus("success");
+        setSubmitMessage(result.synced ? 
+          `✅ ${result.message}` : 
+          `⚠️ ${result.message}`
         );
-        setFormValues({}); // Reset form
+        setFormValues({});
+        setFileInputs({});
       } else {
+        setSubmitStatus("error");
         setSubmitMessage(`❌ ${result.error || "Submission failed"}`);
       }
     } catch (error) {
       console.error("Submission error:", error);
+      setSubmitStatus("error");
       setSubmitMessage("❌ Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -201,10 +154,11 @@ export function FormPreview({
   const renderField = (field: FormField) => {
     const value = formValues[field.id] || field.defaultValue || "";
 
-    // Skip non-input fields
     if (["divider", "header", "richtext"].includes(field.type)) {
       return null;
     }
+
+    const baseInputClasses = "w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-300";
 
     switch (field.type) {
       case "text":
@@ -220,8 +174,8 @@ export function FormPreview({
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             placeholder={field.placeholder}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isPreview && isSubmitting}
+            className={baseInputClasses}
+            disabled={isSubmitting}
           />
         );
       case "textarea":
@@ -231,9 +185,9 @@ export function FormPreview({
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             placeholder={field.placeholder}
             required={field.required}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isPreview && isSubmitting}
+            rows={4}
+            className={`${baseInputClasses} resize-none`}
+            disabled={isSubmitting}
           />
         );
       case "select":
@@ -242,8 +196,8 @@ export function FormPreview({
             value={value}
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isPreview && isSubmitting}
+            className={baseInputClasses}
+            disabled={isSubmitting}
           >
             <option value="">Choose an option...</option>
             {field.options?.map((option, index) => (
@@ -255,37 +209,45 @@ export function FormPreview({
         );
       case "radio":
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {field.options?.map((option, index) => (
-              <label key={index} className="flex items-center space-x-2">
+              <label key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                 <input
                   type="radio"
                   name={field.id}
                   value={option}
                   checked={value === option}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="text-blue-600"
-                  disabled={isPreview && isSubmitting}
+                  className="text-blue-600 focus:ring-blue-500"
+                  disabled={isSubmitting}
                   required={field.required}
                 />
-                <span className="text-sm">{option}</span>
+                <span className="text-sm font-medium">{option}</span>
               </label>
             ))}
           </div>
         );
       case "checkbox":
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {field.options?.map((option, index) => (
-              <label key={index} className="flex items-center space-x-2">
+              <label key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                 <input
                   type="checkbox"
                   value={option}
                   checked={Array.isArray(value) && value.includes(option)}
-                  className="text-blue-600"
-                  disabled
+                  onChange={(e) => {
+                    const currentValues = Array.isArray(value) ? value : [];
+                    if (e.target.checked) {
+                      handleInputChange(field.id, [...currentValues, option]);
+                    } else {
+                      handleInputChange(field.id, currentValues.filter(v => v !== option));
+                    }
+                  }}
+                  className="text-blue-600 focus:ring-blue-500"
+                  disabled={isSubmitting}
                 />
-                <span className="text-sm">{option}</span>
+                <span className="text-sm font-medium">{option}</span>
               </label>
             ))}
           </div>
@@ -293,20 +255,21 @@ export function FormPreview({
       case "file":
       case "image":
         return (
-          <input
-            type="file"
-            multiple={field.multiple}
-            onChange={(e) =>
-              handleInputChange(field.id, e.target.files, true)
-            }
-            className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            disabled={isPreview && isSubmitting}
-          />
-        );
-      case "hidden":
-        return (
-          <div className="text-xs text-gray-400 italic">
-            Hidden field: {value}
+          <div className="space-y-3">
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+              <input
+                type="file"
+                multiple={field.multiple}
+                onChange={(e) => handleInputChange(field.id, e.target.files, true)}
+                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                {field.type === "image" ? "Images only" : "Any file type"} • Max 10MB
+                {field.multiple && " • Multiple files allowed"}
+              </p>
+            </div>
           </div>
         );
       default:
@@ -315,86 +278,167 @@ export function FormPreview({
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-4">
+    <Card className="shadow-xl border-0">
+      <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Live Preview</CardTitle>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <Eye className="w-4 h-4 text-white" />
+            </div>
+            <CardTitle className="text-xl">Live Preview</CardTitle>
+            {isTestMode && (
+              <Badge className="bg-green-100 text-green-800 border-green-200">
+                <Zap className="w-3 h-3 mr-1" />
+                Test Mode
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center space-x-3">
             <Button
               variant={viewMode === "desktop" ? "default" : "outline"}
               size="sm"
               onClick={() => setViewMode("desktop")}
+              className="hover:bg-blue-50"
             >
-              <Monitor size={16} />
+              <Monitor className="w-4 h-4" />
             </Button>
             <Button
               variant={viewMode === "mobile" ? "default" : "outline"}
               size="sm"
               onClick={() => setViewMode("mobile")}
+              className="hover:bg-blue-50"
             >
-              <Smartphone size={16} />
+              <Smartphone className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={generateSampleData}
-              className="ml-2"
+              className="ml-2 hover:bg-green-50 hover:text-green-700"
             >
-              <Play size={16} className="mr-1" />
+              <Play className="w-4 h-4 mr-1" />
               Fill Sample Data
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="h-full overflow-y-auto">
-        <div
-          className={`mx-auto ${viewMode === "mobile" ? "max-w-sm" : "max-w-lg"}`}
-        >
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-6 text-center">
-              {formData.title}
-            </h3>
-            {formData.description && (
-              <p className="text-gray-600 mb-6 text-center">
-                {formData.description}
-              </p>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {formData.fields.map((field) => {
-                const fieldElement = renderField(field);
-                if (!fieldElement) return null; // Skip non-input fields
-
-                return (
-                  <div key={field.id} className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      {field.label}
-                      {field.required && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
-                    </label>
-                    {fieldElement}
-                    {field.helpText && (
-                      <p className="text-xs text-gray-500">{field.helpText}</p>
-                    )}
-                  </div>
-                );
-              })}
-
-              {submitMessage && (
-                <div className="p-4 rounded-lg bg-gray-50 border text-sm">
-                  {submitMessage}
+      
+      <CardContent className="p-8">
+        <div className={`mx-auto transition-all duration-300 ${
+          viewMode === "mobile" ? "max-w-sm" : "max-w-2xl"
+        }`}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+            {/* Form Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4" />
                 </div>
+                <div>
+                  <h3 className="text-xl font-bold">{formData.title}</h3>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Shield className="w-3 h-3" />
+                    <span className="text-xs opacity-90">Secure & Encrypted</span>
+                  </div>
+                </div>
+              </div>
+              {formData.description && (
+                <p className="text-blue-100 leading-relaxed">
+                  {formData.description}
+                </p>
               )}
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Submitting..." : formData.settings.submitText}
-              </Button>
-            </form>
+            {/* Form Content */}
+            <div className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {formData.fields.map((field) => {
+                  const fieldElement = renderField(field);
+                  if (!fieldElement) return null;
+
+                  return (
+                    <div key={field.id} className="space-y-3 group">
+                      <label className="block text-sm font-semibold text-gray-800">
+                        {field.label}
+                        {field.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </label>
+                      <div className="form-field">
+                        {fieldElement}
+                      </div>
+                      {field.helpText && (
+                        <p className="text-xs text-gray-500 flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          {field.helpText}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Submit Message */}
+                {submitMessage && (
+                  <Card className={`border-2 ${
+                    submitStatus === "success" 
+                      ? "border-green-200 bg-green-50" 
+                      : "border-red-200 bg-red-50"
+                  }`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        {submitStatus === "success" ? (
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-red-600" />
+                        )}
+                        <p className={`text-sm font-medium ${
+                          submitStatus === "success" ? "text-green-800" : "text-red-800"
+                        }`}>
+                          {submitMessage}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Enhanced Submit Button */}
+                <Button
+                  type="submit"
+                  className="w-full btn-primary text-lg font-semibold py-4 group"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                      {formData.settings.submitText}
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* Trust Indicators */}
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-center space-x-6 text-xs text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Shield className="w-3 h-3" />
+                    <span>SSL Encrypted</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>GDPR Compliant</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Zap className="w-3 h-3" />
+                    <span>Instant Sync</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>

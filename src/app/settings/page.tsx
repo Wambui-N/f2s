@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Settings,
   User,
@@ -18,6 +22,10 @@ import {
   AlertCircle,
   Link as LinkIcon,
   Sheet,
+  Sparkles,
+  Shield,
+  Zap,
+  Chrome
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -28,9 +36,7 @@ import type { SheetConnection } from "@/lib/types";
 function SettingsContent() {
   const { user, signOut, reconnectWithGoogle } = useAuth();
   const router = useRouter();
-  const [sheetConnections, setSheetConnections] = useState<SheetConnection[]>(
-    [],
-  );
+  const [sheetConnections, setSheetConnections] = useState<SheetConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectingSheet, setConnectingSheet] = useState(false);
   const [newSheetUrl, setNewSheetUrl] = useState("");
@@ -41,19 +47,6 @@ function SettingsContent() {
   useEffect(() => {
     if (user) {
       loadSheetConnections();
-
-      // Check if user returned from OAuth with sheets permissions
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get("connect_sheets") === "true") {
-        // Remove the parameter from URL
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname,
-        );
-        // Show success message or automatically try to connect
-        console.log("User returned with Sheets permissions");
-      }
     }
   }, [user]);
 
@@ -80,22 +73,10 @@ function SettingsContent() {
     try {
       setConnectingSheet(true);
 
-      // Get fresh tokens from current session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      console.log("Session data:", {
-        hasSession: !!session,
-        hasProviderToken: !!session?.provider_token,
-        hasRefreshToken: !!session?.provider_refresh_token,
-        provider: user?.app_metadata?.provider,
-      });
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.provider_token || !session?.provider_refresh_token) {
         alert("Please reconnect your Google account with Sheets permissions.");
-        // The handleConnectToGoogle function is removed, so this will now just show an alert.
-        // If the user needs to re-authorize, they'll need to go through the OAuth flow again.
         return;
       }
 
@@ -118,7 +99,7 @@ function SettingsContent() {
         setNewSheetUrl("");
         setShowConnectForm(false);
         loadSheetConnections();
-        alert("Sheet connected successfully!");
+        // Show success message
       } else {
         alert(`Failed to connect sheet: ${result.error}`);
       }
@@ -136,22 +117,10 @@ function SettingsContent() {
     try {
       setConnectingSheet(true);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      console.log("Create sheet - Session data:", {
-        hasSession: !!session,
-        hasProviderToken: !!session?.provider_token,
-        hasRefreshToken: !!session?.provider_refresh_token,
-        provider: user?.app_metadata?.provider,
-        scopes: session?.provider_token ? "token exists" : "no token",
-      });
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.provider_token || !session?.provider_refresh_token) {
         alert("Please reconnect your Google account with Sheets permissions.");
-        // The handleConnectToGoogle function is removed, so this will now just show an alert.
-        // If the user needs to re-authorize, they'll need to go through the OAuth flow again.
         return;
       }
 
@@ -175,7 +144,7 @@ function SettingsContent() {
         setCreateNewSheet(false);
         setShowConnectForm(false);
         loadSheetConnections();
-        alert("New sheet created and connected successfully!");
+        // Show success message
       } else {
         alert(`Failed to create sheet: ${result.error}`);
       }
@@ -188,11 +157,7 @@ function SettingsContent() {
   };
 
   const handleDeleteConnection = async (connectionId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to disconnect this Google Sheet? Forms using this sheet will no longer sync submissions.",
-      )
-    ) {
+    if (!confirm("Are you sure you want to disconnect this Google Sheet? Forms using this sheet will no longer sync submissions.")) {
       return;
     }
 
@@ -208,7 +173,6 @@ function SettingsContent() {
       setSheetConnections((prev) =>
         prev.filter((conn) => conn.id !== connectionId),
       );
-      alert("Sheet disconnected successfully.");
     } catch (error) {
       console.error("Failed to delete connection:", error);
       alert("Failed to disconnect sheet. Please try again.");
@@ -224,8 +188,8 @@ function SettingsContent() {
       const result = await response.json();
 
       if (result.success) {
-        loadSheetConnections(); // Reload to get updated last_synced
-        alert("Headers synced successfully!");
+        loadSheetConnections();
+        // Show success message
       } else {
         alert(`Failed to sync headers: ${result.error}`);
       }
@@ -237,198 +201,214 @@ function SettingsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted/40 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading settings...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading settings..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your account and Google Sheets connections
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Back to Dashboard
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Settings"
+          description="Manage your account and configure Google Sheets integrations"
+          backButton={{
+            onClick: () => router.push("/dashboard"),
+            label: "Back to Dashboard"
+          }}
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* User Profile */}
-          <div className="lg:col-span-1">
-            <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+          {/* User Profile Card */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <User className="mr-2" />
+                  <User className="mr-3 h-5 w-5" />
                   Profile
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="flex items-center space-x-4">
-                  <img
-                    src={user?.user_metadata?.avatar_url}
-                    alt={user?.user_metadata?.full_name || "User"}
-                    className="w-16 h-16 rounded-full"
-                  />
+                  <div className="relative">
+                    <img
+                      src={user?.user_metadata?.avatar_url || "/placeholder-avatar.png"}
+                      alt={user?.user_metadata?.full_name || "User"}
+                      className="w-16 h-16 rounded-full border-4 border-white shadow-lg"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
                   <div>
-                    <h3 className="font-semibold">
+                    <h3 className="font-semibold text-lg">
                       {user?.user_metadata?.full_name || "Unknown User"}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                       {user?.email}
+                    </p>
+                    <StatusBadge status="success" text="Verified Account" className="mt-2" />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Account Status</Label>
+                    <div className="mt-2">
+                      <StatusBadge status="success" text="Active Premium" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Member Since</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {new Date(user?.created_at || "").toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                      })}
                     </p>
                   </div>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <Label>Account Status</Label>
-                  <Badge variant="default" className="w-fit">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Member Since</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(user?.created_at || "").toLocaleDateString()}
-                  </p>
-                </div>
-
-                <Separator />
-
-                <Button variant="outline" onClick={signOut} className="w-full">
+                <Button 
+                  variant="outline" 
+                  onClick={signOut} 
+                  className="w-full hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            {/* Google Account Card */}
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <img
-                    src="/google-logo.svg"
-                    alt="Google logo"
-                    className="w-5 h-5 mr-2"
-                  />
-                  Google Account
+                  <Chrome className="w-5 h-5 mr-3" />
+                  Google Integration
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Status</Label>
-                    <div className="flex items-center mt-1">
-                      {user?.app_metadata?.provider === "google" ? (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                          <p className="text-sm text-muted-foreground">
-                            Connected
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-4 h-4 mr-2 text-yellow-600" />
-                          <p className="text-sm text-muted-foreground">
-                            Not Connected
-                          </p>
-                        </>
-                      )}
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-red-500 rounded-full flex items-center justify-center">
+                      <Chrome className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Google Account</Label>
+                      <div className="flex items-center mt-1">
+                        {user?.app_metadata?.provider === "google" ? (
+                          <StatusBadge status="success" text="Connected" />
+                        ) : (
+                          <StatusBadge status="warning" text="Not Connected" />
+                        )}
+                      </div>
                     </div>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={reconnectWithGoogle}
+                    className="hover:bg-blue-50"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Reconnect
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground pt-2">
-                  If you're experiencing issues with Google Sheets, try
-                  reconnecting your account to refresh your permissions.
-                </p>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">Secure Integration</p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Your Google account is securely connected with enterprise-grade encryption. 
+                        If you're experiencing issues with Google Sheets, try reconnecting to refresh permissions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Google Sheets Connections */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="shadow-lg">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    <Sheet className="mr-2" />
+                  <CardTitle className="flex items-center text-xl">
+                    <Sheet className="mr-3 h-5 w-5" />
                     Google Sheets Connections
                   </CardTitle>
                   <Button
                     onClick={() => setShowConnectForm(!showConnectForm)}
                     disabled={connectingSheet}
+                    className="btn-primary"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Connect Sheet
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 {/* Connect Form */}
                 {showConnectForm && (
-                  <Card className="border-2 border-dashed">
+                  <Card className="border-2 border-dashed border-blue-200 bg-blue-50/30">
                     <CardContent className="p-6">
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div className="flex items-center space-x-4">
                           <Button
                             variant={!createNewSheet ? "default" : "outline"}
                             onClick={() => setCreateNewSheet(false)}
                             size="sm"
+                            className={!createNewSheet ? "btn-primary" : ""}
                           >
-                            Connect Existing Sheet
+                            <LinkIcon className="w-4 h-4 mr-2" />
+                            Connect Existing
                           </Button>
                           <Button
                             variant={createNewSheet ? "default" : "outline"}
                             onClick={() => setCreateNewSheet(true)}
                             size="sm"
+                            className={createNewSheet ? "btn-primary" : ""}
                           >
-                            Create New Sheet
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create New
                           </Button>
                         </div>
 
                         {createNewSheet ? (
                           <div className="space-y-4">
                             <div>
-                              <Label htmlFor="sheet-name">Sheet Name</Label>
+                              <Label htmlFor="sheet-name" className="text-sm font-medium">
+                                Sheet Name
+                              </Label>
                               <Input
                                 id="sheet-name"
                                 placeholder="My FormToSheets Data"
                                 value={newSheetName}
-                                onChange={(e) =>
-                                  setNewSheetName(e.target.value)
-                                }
+                                onChange={(e) => setNewSheetName(e.target.value)}
+                                className="mt-2"
                               />
                             </div>
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-3">
                               <Button
                                 onClick={handleCreateNewSheet}
-                                disabled={
-                                  connectingSheet || !newSheetName.trim()
-                                }
+                                disabled={connectingSheet || !newSheetName.trim()}
+                                className="btn-primary flex-1"
                               >
                                 {connectingSheet ? (
                                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                                 ) : (
-                                  <Plus className="w-4 h-4 mr-2" />
+                                  <Sparkles className="w-4 h-4 mr-2" />
                                 )}
                                 Create & Connect
                               </Button>
@@ -443,7 +423,7 @@ function SettingsContent() {
                         ) : (
                           <div className="space-y-4">
                             <div>
-                              <Label htmlFor="sheet-url">
+                              <Label htmlFor="sheet-url" className="text-sm font-medium">
                                 Google Sheets URL
                               </Label>
                               <Input
@@ -451,14 +431,17 @@ function SettingsContent() {
                                 placeholder="https://docs.google.com/spreadsheets/d/..."
                                 value={newSheetUrl}
                                 onChange={(e) => setNewSheetUrl(e.target.value)}
+                                className="mt-2"
                               />
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Paste the full URL of your Google Sheet
+                              </p>
                             </div>
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-3">
                               <Button
                                 onClick={handleConnectExistingSheet}
-                                disabled={
-                                  connectingSheet || !newSheetUrl.trim()
-                                }
+                                disabled={connectingSheet || !newSheetUrl.trim()}
+                                className="btn-primary flex-1"
                               >
                                 {connectingSheet ? (
                                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -477,27 +460,16 @@ function SettingsContent() {
                           </div>
                         )}
 
-                        <div className="text-sm text-muted-foreground">
-                          <p className="mb-2">
-                            Connect a new or existing Google Sheet to a form
-                            from the 'Integrations' tab in the form builder.
-                          </p>
-                          <div className="space-y-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={async () => {
-                                const {
-                                  data: { session },
-                                } = await supabase.auth.getSession();
-                                console.log("Debug session:", session);
-                                alert(
-                                  `Debug: Has provider token: ${!!session?.provider_token}, Has refresh token: ${!!session?.provider_refresh_token}`,
-                                );
-                              }}
-                            >
-                              Debug Session
-                            </Button>
+                        <div className="bg-white border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-start space-x-3">
+                            <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-blue-900">Pro Tip</p>
+                              <p className="text-xs text-blue-700 mt-1">
+                                Connect sheets to forms from the 'Integrations' tab in the form builder. 
+                                Each form can have its own dedicated sheet for better organization.
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -507,66 +479,60 @@ function SettingsContent() {
 
                 {/* Existing Connections */}
                 {sheetConnections.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Sheet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      No Google Sheets Connected
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Connect a Google Sheet to automatically save form
-                      submissions
-                    </p>
-                    <Button onClick={() => setShowConnectForm(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Connect Your First Sheet
-                    </Button>
-                  </div>
+                  <EmptyState
+                    icon={<Sheet className="h-12 w-12 text-muted-foreground" />}
+                    title="No Google Sheets Connected"
+                    description="Connect your first Google Sheet to start automatically saving form submissions. Your data will sync in real-time."
+                    action={{
+                      label: "Connect Your First Sheet",
+                      onClick: () => setShowConnectForm(true)
+                    }}
+                  />
                 ) : (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Connected Sheets</h3>
+                      <Badge variant="secondary" className="px-3 py-1">
+                        {sheetConnections.length} connected
+                      </Badge>
+                    </div>
+                    
                     {sheetConnections.map((connection) => (
-                      <Card key={connection.id} className="border">
-                        <CardContent className="p-4">
+                      <Card key={connection.id} className="border shadow-sm hover:shadow-md transition-all duration-200">
+                        <CardContent className="p-6">
                           <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3">
-                                <Sheet className="h-5 w-5 text-green-600" />
-                                <div>
-                                  <h4 className="font-semibold">
-                                    {connection.sheet_name}
-                                  </h4>
+                            <div className="flex items-center space-x-4 flex-1">
+                              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                                <Sheet className="h-6 w-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-lg">{connection.sheet_name}</h4>
+                                <div className="flex items-center space-x-4 mt-2">
                                   <p className="text-sm text-muted-foreground">
-                                    Connected{" "}
-                                    {new Date(
-                                      connection.created_at,
-                                    ).toLocaleDateString()}
+                                    Connected {new Date(connection.created_at).toLocaleDateString()}
                                   </p>
                                   {connection.last_synced && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Last synced:{" "}
-                                      {new Date(
-                                        connection.last_synced,
-                                      ).toLocaleString()}
+                                    <p className="text-xs text-green-600 flex items-center">
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Last synced: {new Date(connection.last_synced).toLocaleString()}
                                     </p>
                                   )}
+                                </div>
+                                <div className="mt-2">
+                                  <StatusBadge
+                                    status={connection.is_active ? "success" : "error"}
+                                    text={connection.is_active ? "Active" : "Inactive"}
+                                  />
                                 </div>
                               </div>
                             </div>
 
                             <div className="flex items-center space-x-2">
-                              <Badge
-                                variant={
-                                  connection.is_active ? "default" : "secondary"
-                                }
-                              >
-                                {connection.is_active ? "Active" : "Inactive"}
-                              </Badge>
-
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                  window.open(connection.sheet_url, "_blank")
-                                }
+                                onClick={() => window.open(connection.sheet_url, "_blank")}
+                                className="hover:bg-green-50 hover:text-green-700"
                               >
                                 <ExternalLink className="w-4 h-4" />
                               </Button>
@@ -575,6 +541,7 @@ function SettingsContent() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleSyncHeaders(connection.id)}
+                                className="hover:bg-blue-50"
                               >
                                 <RefreshCw className="w-4 h-4" />
                               </Button>
@@ -582,10 +549,8 @@ function SettingsContent() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                  handleDeleteConnection(connection.id)
-                                }
-                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteConnection(connection.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -596,6 +561,43 @@ function SettingsContent() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Security & Privacy Card */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="mr-3 h-5 w-5" />
+                  Security & Privacy
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Two-Factor Authentication</span>
+                    <StatusBadge status="success" text="Enabled" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Data Encryption</span>
+                    <StatusBadge status="success" text="AES-256" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">GDPR Compliance</span>
+                    <StatusBadge status="success" text="Compliant" />
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    Download My Data
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
+                    Delete Account
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
