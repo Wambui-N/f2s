@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation";
 import type { SheetConnection } from "@/lib/types";
 
 function SettingsContent() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, reconnectWithGoogle } = useAuth();
   const router = useRouter();
   const [sheetConnections, setSheetConnections] = useState<SheetConnection[]>(
     [],
@@ -311,6 +311,55 @@ function SettingsContent() {
                 <Button variant="outline" onClick={signOut} className="w-full">
                   Sign Out
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <img
+                    src="/google-logo.svg"
+                    alt="Google logo"
+                    className="w-5 h-5 mr-2"
+                  />
+                  Google Account
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Status</Label>
+                    <div className="flex items-center mt-1">
+                      {user?.app_metadata?.provider === "google" ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                          <p className="text-sm text-muted-foreground">
+                            Connected
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-4 h-4 mr-2 text-yellow-600" />
+                          <p className="text-sm text-muted-foreground">
+                            Not Connected
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={reconnectWithGoogle}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Reconnect
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground pt-2">
+                  If you're experiencing issues with Google Sheets, try
+                  reconnecting your account to refresh your permissions.
+                </p>
               </CardContent>
             </Card>
           </div>

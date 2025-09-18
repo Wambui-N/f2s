@@ -47,6 +47,10 @@ export default function LandingPage() {
     }
   };
 
+  const scrollToFeatures = () => {
+    document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   if (showBuilder) {
     return <FormBuilder onBack={() => setShowBuilder(false)} />;
   }
@@ -76,8 +80,8 @@ export default function LandingPage() {
             <div className="flex items-center space-x-4">
               {user ? (
                 <Button onClick={() => router.push("/dashboard")}>
-                  Dashboard
-                </Button>
+                Dashboard
+              </Button>
               ) : (
                 <>
                   <Button
@@ -89,7 +93,7 @@ export default function LandingPage() {
                   </Button>
                   <Button onClick={handleGetStarted} disabled={loading}>
                     {loading ? "Loading..." : "Get Started"}
-                  </Button>
+              </Button>
                 </>
               )}
             </div>
@@ -141,11 +145,7 @@ export default function LandingPage() {
                 variant="outline"
                 size="lg"
                 className="text-lg font-semibold px-8 py-4"
-                onClick={() =>
-                  document
-                    .getElementById("features")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
+                onClick={scrollToFeatures}
                 aria-label="Scroll to the features section to see how FormToSheets works"
               >
                 See How It Works
@@ -166,8 +166,8 @@ export default function LandingPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Full Name
                           </label>
-                          <input
-                            type="text"
+                          <input 
+                            type="text" 
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="John Smith"
                           />
@@ -176,8 +176,8 @@ export default function LandingPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email Address
                           </label>
-                          <input
-                            type="email"
+                          <input 
+                            type="email" 
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="john@example.com"
                           />
@@ -321,7 +321,7 @@ export default function LandingPage() {
                   Works Anywhere
                 </h3>
                 <p className="text-muted-foreground">
-                  Add forms to your website, share links, or embed anywhere.
+                  Add forms to your website, share links, or embed anywhere. 
                   Perfect for capturing leads from social media, business cards,
                   or email signatures.
                 </p>

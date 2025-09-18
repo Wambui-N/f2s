@@ -139,16 +139,42 @@ export async function POST(
     // Get form details and verify it exists
     const { data: form, error: formError } = await supabase
       .from("forms")
-      .select(`
+      .select(
+        `
         *,
+        form_data,
         default_sheet_connection_id,
         sheet_connections!forms_default_sheet_connection_id_fkey (*)
-      `)
+      `
+      )
       .eq("id", formId)
       .single();
 
     if (formError || !form) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
+    }
+
+    // Server-side validation and sanitization
+    const sanitizedData: SubmissionData = {};
+    const validationErrors: Record<string, string> = {};
+    const formFields = form.form_data?.fields || [];
+
+    for (const field of formFields) {
+      const submittedValue = formData[field.id];
+      if (field.required && !submittedValue) {
+        validationErrors[field.id] = `${field.label} is required.`;
+      }
+      // Add more validation logic here (e.g., type checking)
+      if (submittedValue !== undefined) {
+        sanitizedData[field.id] = submittedValue;
+      }
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validationErrors },
+        { status: 400 }
+      );
     }
 
     // Create submission record first
@@ -157,7 +183,7 @@ export async function POST(
       .insert({
         form_id: formId,
         user_id: form.user_id,
-        submission_data: formData,
+        submission_data: sanitizedData, // Use sanitized data
         sheet_connection_id: form.default_sheet_connection_id,
       })
       .select()
@@ -215,9 +241,9 @@ export async function POST(
     // Write to Google Sheets with retry logic
     const writeResult = await writeToSheetWithRetry(
       sheetConnection,
-      formData,
+      sanitizedData, // Use sanitized data
       fieldMappings,
-      submission.id,
+      submission.id
     );
 
     if (writeResult.success) {

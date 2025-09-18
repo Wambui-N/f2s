@@ -13,26 +13,58 @@ const SCOPES = [
 ];
 
 class GoogleSheetsService {
-  private async getAuthClient(accessToken: string, refreshToken: string) {
+  private async getAuthClient(
+    accessToken: string,
+    refreshToken: string,
+    expiresAt?: number
+  ) {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/callback`,
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/callback`
     );
 
     oauth2Client.setCredentials({
       access_token: accessToken,
       refresh_token: refreshToken,
+      expiry_date: expiresAt,
     });
+
+    // Proactively refresh the token if it's expired or close to expiring
+    if (expiresAt && Date.now() >= expiresAt - 60000) {
+      // 1 minute buffer
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        oauth2Client.setCredentials(credentials);
+
+        // Update the stored tokens in the database
+        await this.updateStoredTokens(
+          accessToken,
+          credentials.access_token!,
+          credentials.refresh_token || refreshToken,
+          credentials.expiry_date || undefined
+        );
+      } catch (error) {
+        console.error("Failed to refresh access token:", error);
+        // This is a critical error, the refresh token might be invalid.
+        // We'll mark the connection as inactive.
+        await supabase
+          .from("sheet_connections")
+          .update({ is_active: false })
+          .eq("refresh_token", refreshToken);
+        throw new Error("Failed to refresh access token. Please reconnect.");
+      }
+    }
 
     // Handle token refresh automatically
     oauth2Client.on("tokens", async (tokens) => {
-      if (tokens.refresh_token) {
+      if (tokens.access_token) {
         // Update the stored tokens in database
         await this.updateStoredTokens(
           accessToken,
-          tokens.access_token!,
-          tokens.refresh_token,
+          tokens.access_token,
+          tokens.refresh_token || refreshToken,
+          tokens.expiry_date || undefined
         );
       }
     });
@@ -44,6 +76,7 @@ class GoogleSheetsService {
     oldAccessToken: string,
     newAccessToken: string,
     refreshToken: string,
+    expiresAt?: number | null
   ) {
     try {
       await supabase
@@ -51,6 +84,7 @@ class GoogleSheetsService {
         .update({
           access_token: newAccessToken,
           refresh_token: refreshToken,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         })
         .eq("access_token", oldAccessToken);
     } catch (error) {
@@ -264,6 +298,16 @@ class GoogleSheetsService {
 
       // Get current headers to know column order
       const headers = await this.getSheetHeaders(sheetConnection);
+
+      // Check for new fields and sync headers if necessary
+      const formFields = Object.values(fieldMappings);
+      const newFields = formFields.filter((field) => !headers.includes(field));
+      if (newFields.length > 0) {
+        console.log("New fields detected, syncing headers:", newFields);
+        await this.syncHeaders(sheetConnection, formFields);
+        // Re-fetch headers after syncing
+        headers.push(...newFields);
+      }
 
       if (headers.length === 0) {
         return {

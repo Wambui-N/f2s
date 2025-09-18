@@ -24,6 +24,12 @@ export function FormPreview({
 }: FormPreviewProps) {
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [fileInputs, setFileInputs] = useState<Record<string, FileList | null>>(
+    {}
+  );
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {}
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
@@ -85,11 +91,19 @@ export function FormPreview({
     onSampleData?.();
   };
 
-  const handleInputChange = (fieldId: string, value: any) => {
-    setFormValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
+  const handleInputChange = (
+    fieldId: string,
+    value: any,
+    isFile = false
+  ) => {
+    if (isFile) {
+      setFileInputs((prev) => ({ ...prev, [fieldId]: value }));
+    } else {
+      setFormValues((prev) => ({
+        ...prev,
+        [fieldId]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +119,45 @@ export function FormPreview({
     setSubmitMessage(null);
 
     try {
-      // Create field mappings (fieldId -> field label)
+      // 1. Handle file uploads first
+      const uploadedFileUrls: Record<string, string[]> = {};
+
+      for (const field of formData.fields) {
+        if ((field.type === "file" || field.type === "image") && fileInputs[field.id]) {
+          const files = Array.from(fileInputs[field.id] as FileList);
+          const urls = [];
+
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const uploadFormData = new FormData();
+            uploadFormData.append("file", file);
+            uploadFormData.append("formId", formData.id);
+            uploadFormData.append("fieldId", field.id);
+
+            // TODO: Add onUploadProgress to fetch call if you want progress bars
+            const response = await fetch("/api/upload", {
+              method: "POST",
+              body: uploadFormData,
+            });
+
+            const result = await response.json();
+            if (result.success) {
+              urls.push(result.url);
+            } else {
+              throw new Error(`Failed to upload ${file.name}`);
+            }
+          }
+          uploadedFileUrls[field.id] = urls;
+        }
+      }
+
+      // 2. Merge uploaded file URLs into the form submission data
+      const submissionData = { ...formValues };
+      for (const fieldId in uploadedFileUrls) {
+        submissionData[fieldId] = uploadedFileUrls[fieldId].join(", ");
+      }
+
+      // 3. Create field mappings
       const fieldMappings: Record<string, string> = {};
       formData.fields.forEach((field) => {
         if (
@@ -123,7 +175,7 @@ export function FormPreview({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          formData: formValues,
+          formData: submissionData, // Use data with file URLs
           fieldMappings,
         }),
       });
@@ -239,12 +291,17 @@ export function FormPreview({
           </div>
         );
       case "file":
+      case "image":
         return (
-          <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-            <div className="text-sm text-gray-500">
-              📄 {value || "No file selected"}
-            </div>
-          </div>
+          <input
+            type="file"
+            multiple={field.multiple}
+            onChange={(e) =>
+              handleInputChange(field.id, e.target.files, true)
+            }
+            className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            disabled={isPreview && isSubmitting}
+          />
         );
       case "hidden":
         return (
