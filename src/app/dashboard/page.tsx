@@ -34,11 +34,13 @@ import {
   Share2,
   Sparkles,
   Zap,
-  Activity
+  Activity,
+  ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateFormModal } from "@/components/builder/CreateFormModal";
+import { getUserAnalytics } from "@/lib/analytics";
 
 interface FormRecord {
   id: string;
@@ -63,13 +65,24 @@ function DashboardContent() {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<FormRecord | null>(null);
   const [copiedFormId, setCopiedFormId] = useState<string | null>(null);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalForms: 0,
+    totalViews: 0,
+    totalSubmissions: 0,
+    publishedForms: 0,
+    formsThisMonth: 0,
+    viewsThisMonth: 0,
+    submissionsThisMonth: 0,
+    submissionsThisWeek: 0
+  });
 
   useEffect(() => {
-    const fetchForms = async () => {
+    const fetchData = async () => {
       if (!user) return;
 
       setLoading(true);
       try {
+        // Fetch forms data
         const { data, error } = await supabase
           .from("forms")
           .select(`
@@ -84,12 +97,30 @@ function DashboardContent() {
         if (error) {
           console.error("Error fetching forms:", error);
         } else {
-          // Add mock submission counts for now
-          const formsWithSubmissions = data.map((form) => ({
-            ...form,
-            submissions: Math.floor(Math.random() * 50), // Mock data
-          }));
-          setForms(formsWithSubmissions as any);
+          setForms(data as any);
+        }
+
+        // Fetch analytics data
+        const analyticsData = await getUserAnalytics(user.id);
+        if (analyticsData) {
+          const publishedFormsCount = data?.filter(form => form.status === 'published').length || 0;
+          
+          setDashboardStats({
+            totalForms: parseInt(analyticsData.total_forms) || 0,
+            totalViews: parseInt(analyticsData.total_views) || 0,
+            totalSubmissions: parseInt(analyticsData.total_submissions) || 0,
+            publishedForms: publishedFormsCount,
+            formsThisMonth: parseInt(analyticsData.forms_this_month) || 0,
+            viewsThisMonth: parseInt(analyticsData.views_this_month) || 0,
+            submissionsThisMonth: parseInt(analyticsData.submissions_this_month) || 0,
+            submissionsThisWeek: parseInt(analyticsData.submissions_this_week) || 0
+          });
+
+          setHistoricalStats({
+            formsLastMonth: parseInt(analyticsData.forms_last_month) || 0,
+            submissionsLastMonth: parseInt(analyticsData.submissions_last_month) || 0,
+            submissionsLastWeek: parseInt(analyticsData.submissions_last_week) || 0
+          });
         }
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -98,8 +129,20 @@ function DashboardContent() {
       }
     };
 
-    fetchForms();
+    fetchData();
   }, [user]);
+
+  useEffect(() => {
+    const handleOpenCreateFormModal = () => {
+      setCreateModalOpen(true);
+    };
+
+    window.addEventListener('openCreateFormModal', handleOpenCreateFormModal);
+    
+    return () => {
+      window.removeEventListener('openCreateFormModal', handleOpenCreateFormModal);
+    };
+  }, []);
 
   const openDeleteDialog = (form: FormRecord) => {
     setFormToDelete(form);
@@ -133,14 +176,30 @@ function DashboardContent() {
     setTimeout(() => setCopiedFormId(null), 2000);
   };
 
-  const totalSubmissions = forms.reduce(
-    (sum, form: any) => sum + (form.submissions || 0),
-    0,
-  );
-  const publishedForms = forms.filter(
-    (form) => form.status === "published",
-  ).length;
-  const recentSubmissions = Math.floor(totalSubmissions * 0.3); // Mock recent data
+  // Helper function to calculate percentage change
+  const calculatePercentageChange = (current: number, previous: number): { value: number, type: "increase" | "decrease" } => {
+    if (previous === 0) {
+      return { value: current > 0 ? 100 : 0, type: current > 0 ? "increase" : "increase" };
+    }
+    
+    const change = ((current - previous) / previous) * 100;
+    const roundedChange = Math.round(change);
+    
+    if (roundedChange > 0) {
+      return { value: roundedChange, type: "increase" };
+    } else if (roundedChange < 0) {
+      return { value: Math.abs(roundedChange), type: "decrease" };
+    } else {
+      return { value: 0, type: "increase" };
+    }
+  };
+
+  // We'll need historical data to calculate changes, let's add it to the state
+  const [historicalStats, setHistoricalStats] = useState({
+    formsLastMonth: 0,
+    submissionsLastMonth: 0,
+    submissionsLastWeek: 0
+  });
 
   if (loading) {
     return (
@@ -152,7 +211,7 @@ function DashboardContent() {
 
   return (
     <>
-      <main className="grid flex-1 items-start gap-8 p-6 sm:px-8 sm:py-6 md:gap-12">
+      <main className="grid flex-1 items-start gap-8 p-6 sm:p-8 md:gap-12">
         {/* Enhanced Header */}
         <PageHeader
           title="Dashboard"
@@ -173,41 +232,38 @@ function DashboardContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
             title="Total Forms"
-            value={forms.length}
+            value={dashboardStats.totalForms}
             change={{
-              value: 12,
-              type: "increase",
-              period: "last month"
+              ...calculatePercentageChange(dashboardStats.formsThisMonth, historicalStats.formsLastMonth),
+              period: "vs last month"
             }}
             icon={<FileText className="h-6 w-6" />}
           />
           <StatsCard
             title="Published Forms"
-            value={publishedForms}
+            value={dashboardStats.publishedForms}
             change={{
-              value: 8,
-              type: "increase", 
-              period: "last month"
+              value: dashboardStats.publishedForms > 0 ? Math.round((dashboardStats.publishedForms / dashboardStats.totalForms) * 100) : 0,
+              type: "increase",
+              period: "of total forms"
             }}
             icon={<ExternalLink className="h-6 w-6" />}
           />
           <StatsCard
             title="Total Submissions"
-            value={totalSubmissions}
+            value={dashboardStats.totalSubmissions}
             change={{
-              value: 23,
-              type: "increase",
-              period: "last month"
+              ...calculatePercentageChange(dashboardStats.submissionsThisMonth, historicalStats.submissionsLastMonth),
+              period: "vs last month"
             }}
             icon={<Users className="h-6 w-6" />}
           />
           <StatsCard
             title="This Week"
-            value={recentSubmissions}
+            value={dashboardStats.submissionsThisWeek}
             change={{
-              value: 15,
-              type: "increase",
-              period: "last week"
+              ...calculatePercentageChange(dashboardStats.submissionsThisWeek, historicalStats.submissionsLastWeek),
+              period: "vs last week"
             }}
             icon={<TrendingUp className="h-6 w-6" />}
           />
@@ -353,7 +409,7 @@ function DashboardContent() {
         </Card>
 
         {/* Enhanced Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="card-interactive shadow-lg hover:shadow-xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 mx-auto">
@@ -369,7 +425,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Link href="/settings">
+          <Link href="/dashboard/settings">
             <Card className="card-interactive shadow-lg hover:shadow-xl h-full">
               <CardContent className="p-8 text-center h-full flex flex-col justify-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center text-white mb-6 mx-auto">
@@ -401,7 +457,7 @@ function DashboardContent() {
               </Badge>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </main>
 
       <CreateFormModal

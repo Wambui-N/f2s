@@ -68,7 +68,7 @@ export default function Reviews() {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Loved by Thousands
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto">
             See what our customers are saying about FormToSheets. Join thousands
             of satisfied users who've transformed their workflow.
           </p>

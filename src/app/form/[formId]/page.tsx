@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { FormPreview } from "@/components/builder/FormPreview";
 import { supabase } from "@/lib/supabase";
 import { FormData } from "@/components/builder/types";
+import { trackFormViewAuto } from "@/lib/analytics";
 
 interface FormPageProps {
   params: {
@@ -34,6 +35,10 @@ export default function FormPage({ params }: FormPageProps) {
         setError("This form is not currently active.");
       } else {
         setFormData(data.form_data as FormData);
+        // Track form view for analytics
+        trackFormViewAuto(formId).catch(error => {
+          console.error('Failed to track form view:', error);
+        });
       }
       setLoading(false);
     };

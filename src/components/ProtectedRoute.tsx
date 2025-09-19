@@ -25,7 +25,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-background to-purple-50/50 flex items-center justify-center">
-        <Card className="w-full max-w-md shadow-xl border-0">
+        <Card className="w-full h-full shadow-xl border-0">
           <CardContent className="flex flex-col items-center justify-center p-12">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
               <Sparkles className="w-8 h-8 text-white animate-pulse" />
@@ -40,7 +40,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-background to-purple-50/50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-xl border-0 animate-scale-in">
+        <Card className="w-full h-full shadow-xl border-0 animate-scale-in">
           <CardContent className="flex flex-col items-center justify-center p-12">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
               <Shield className="w-8 h-8 text-white" />

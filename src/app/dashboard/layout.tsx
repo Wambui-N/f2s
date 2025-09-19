@@ -14,16 +14,27 @@ import {
   BarChart3,
   HelpCircle,
   Bell,
-  Search
+  Plus,
+  CreditCard,
+  MessageCircle,
+  BookOpen,
+  Zap,
+  CheckCircle,
+  AlertTriangle,
+  RefreshCw,
+  ExternalLink,
+  Megaphone
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import { Input } from "@/components/ui/input";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Mock Google Sheets connection status - replace with real logic
+  const [googleSheetsStatus, setGoogleSheetsStatus] = React.useState<'connected' | 'disconnected' | 'error'>('connected');
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,15 +52,52 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       href: "/dashboard/analytics", 
       label: "Analytics", 
       icon: BarChart3,
-      description: "View insights",
-      badge: "Soon"
+      description: "View insights"
     },
     { 
-      href: "/settings", 
+      href: "/dashboard/settings", 
       label: "Settings", 
       icon: Settings,
       description: "Configure integrations"
     },
+  ] as Array<{
+    href: string;
+    label: string;
+    icon: any;
+    description: string;
+    badge?: string;
+  }>;
+
+  const accountItems = [
+    {
+      href: "/dashboard/billing",
+      label: "Billing",
+      icon: CreditCard,
+      description: "Manage subscription",
+      badge: "Pro"
+    }
+  ];
+
+  const supportItems = [
+    {
+      href: "/dashboard/help",
+      label: "Help Center",
+      icon: HelpCircle,
+      description: "Documentation & guides"
+    },
+    {
+      href: "/dashboard/support",
+      label: "Contact Support",
+      icon: MessageCircle,
+      description: "Get help from our team"
+    },
+    {
+      href: "/dashboard/whats-new",
+      label: "What's New",
+      icon: Megaphone,
+      description: "Latest updates",
+      badge: "New"
+    }
   ];
 
   return (
@@ -70,16 +118,29 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
 
-            {/* Search Bar */}
-            <div className="p-4 border-b">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search forms..." 
-                  className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                />
+
+            {/* Quick Actions */}
+            <div className="px-4 py-6">
+              <div className="space-y-2">
+                {/* <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quick Actions</p> */}
+                <Button 
+                  onClick={() => {
+                    router.push('/dashboard');
+                    // Trigger create form modal - this will be handled by the dashboard page
+                    setTimeout(() => {
+                      const event = new CustomEvent('openCreateFormModal');
+                      window.dispatchEvent(event);
+                    }, 100);
+                  }}
+                  className="w-full justify-start bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Form
+                </Button>
               </div>
             </div>
+
 
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-4">
@@ -106,18 +167,67 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                     )}
                   </Link>
                 ))}
+
+                {/* Account Section */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-4">Account</p>
+                  {accountItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:bg-blue-50 hover:text-blue-700 ${
+                        pathname === item.href
+                          ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border border-blue-200 shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <div className="flex-1">
+                        <div className="font-medium">{item.label}</div>
+                        <div className="text-xs text-muted-foreground">{item.description}</div>
+                      </div>
+                      {item.badge && (
+                        <Badge variant="secondary" className="text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Support Section */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-4">Support</p>
+                  {supportItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:bg-blue-50 hover:text-blue-700 ${
+                        pathname === item.href
+                          ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border border-blue-200 shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <div className="flex-1">
+                        <div className="font-medium">{item.label}</div>
+                        <div className="text-xs text-muted-foreground">{item.description}</div>
+                      </div>
+                      {item.badge && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </nav>
             </div>
 
             {/* User Profile Section */}
             <div className="border-t bg-gray-50/50 p-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <img
-                  src={user?.user_metadata?.avatar_url || "/placeholder-avatar.png"}
-                  alt={user?.user_metadata?.full_name || "User"}
-                  className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-                />
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm truncate">
                     {user?.user_metadata?.full_name || "User"}
                   </p>
@@ -128,10 +238,42 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 flex-shrink-0"
                 >
                   <Bell className="h-4 w-4" />
                 </Button>
+              </div>
+
+              {/* Minimal System Status */}
+              <div className="flex items-center justify-between mb-3 px-2 py-1 bg-white rounded border">
+                <div className="flex items-center space-x-2">
+                  {googleSheetsStatus === 'connected' ? (
+                    <>
+                      <CheckCircle className="w-3 h-3 text-green-500" />
+                      <span className="text-xs text-green-700">Sheets Connected</span>
+                    </>
+                  ) : googleSheetsStatus === 'error' ? (
+                    <>
+                      <AlertTriangle className="w-3 h-3 text-red-500" />
+                      <span className="text-xs text-red-700">Connection Error</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-3 h-3 text-yellow-500" />
+                      <span className="text-xs text-yellow-700">Needs Reconnect</span>
+                    </>
+                  )}
+                </div>
+                {googleSheetsStatus !== 'connected' && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 px-1 text-xs"
+                    onClick={() => router.push('/dashboard/settings')}
+                  >
+                    <RefreshCw className="w-2 h-2" />
+                  </Button>
+                )}
               </div>
               
               <Button

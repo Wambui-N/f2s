@@ -22,7 +22,7 @@ export default function Footer() {
                 FormToSheets
               </button>
             </div>
-            <p className="text-gray-400 mb-6 max-w-md">
+            <p className="text-gray-400 mb-6">
               Transform any form submission into organized Google Sheets
               automatically. No coding required. No complex setup. Just pure
               simplicity.

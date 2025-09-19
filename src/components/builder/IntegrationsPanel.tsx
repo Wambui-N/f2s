@@ -415,7 +415,7 @@ export function IntegrationsPanel({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.open("/settings", "_blank")}
+                      onClick={() => window.open("/dashboard/settings", "_blank")}
                     >
                       Manage Connections
                     </Button>

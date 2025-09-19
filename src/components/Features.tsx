@@ -195,7 +195,7 @@ export default function Features() {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Built for Small Business
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto">
             While others treat Google Sheets as an add-on, we make it your
             native database. Beautiful forms that live where you already work.
           </p>
