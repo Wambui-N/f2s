@@ -78,7 +78,7 @@ export function IntegrationsPanel({
 
         if (formError) throw formError;
         
-        setConnection(formWithConnection?.sheet_connections || null);
+        setConnection((formWithConnection?.sheet_connections as unknown as SheetConnection) || null);
 
         // Fetch user's existing connections
         const { data: connections, error: connectionsError } = await supabase
@@ -106,7 +106,18 @@ export function IntegrationsPanel({
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session?.provider_token) {
+      if (!session) {
+        throw new Error("You must be signed in to create sheets.");
+      }
+
+      // Get Google tokens from database
+      const { data: tokens, error: tokensError } = await supabase
+        .from("user_google_tokens")
+        .select("access_token, refresh_token")
+        .eq("user_id", user!.id)
+        .single();
+
+      if (tokensError || !tokens) {
         throw new Error("Google account not connected. Please connect in settings.");
       }
 
@@ -120,8 +131,8 @@ export function IntegrationsPanel({
         },
         body: JSON.stringify({
           sheetName,
-          accessToken: session.provider_token,
-          refreshToken: session.provider_refresh_token,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
         }),
       });
 

@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Chrome, Shield, Sparkles } from "lucide-react";
+import { Chrome, Shield, Sparkles, ArrowRight } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

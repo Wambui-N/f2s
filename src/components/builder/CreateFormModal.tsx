@@ -20,7 +20,8 @@ import {
   AlertTriangle, 
   Sparkles,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Settings
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -50,10 +51,27 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     setError(null);
     setStep("creating");
 
+    // Add a small delay to ensure tokens are stored
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     try {
       // Check for Google Sheets permissions
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.provider_token || !session?.provider_refresh_token) {
+      if (!session) {
+        setError("You must be signed in to create forms.");
+        setStep("details");
+        setIsCreating(false);
+        return;
+      }
+
+      // Get Google tokens from database
+      const { data: tokens, error: tokensError } = await supabase
+        .from("user_google_tokens")
+        .select("access_token, refresh_token")
+        .eq("user_id", user.id)
+        .single();
+
+      if (tokensError || !tokens) {
         setError("Google Sheets permissions are required. Please connect your account in settings.");
         setStep("details");
         setIsCreating(false);
@@ -69,8 +87,8 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         },
         body: JSON.stringify({
           sheetName: `${formName} - Submissions`,
-          accessToken: session.provider_token,
-          refreshToken: session.provider_refresh_token,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
         }),
       });
 
@@ -201,9 +219,23 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start">
                   <AlertTriangle className="h-5 w-5 mr-3 mt-0.5 text-red-600 shrink-0" />
-                  <div>
+                  <div className="flex-1">
                     <p className="font-semibold text-red-900">Error</p>
-                    <p className="text-red-800 text-sm">{error}</p>
+                    <p className="text-red-800 text-sm mb-3">{error}</p>
+                    {error.includes("Google Sheets permissions") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleClose();
+                          router.push("/dashboard/settings");
+                        }}
+                        className="w-full justify-center text-sm"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Connect Google Account
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}

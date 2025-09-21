@@ -123,7 +123,7 @@ export function WaitingListHero() {
                 <div className="flex items-center space-x-2 mb-4">
                   <FileText className="h-8 w-8 text-[#4A3B30]" />
                   <span className="text-2xl font-bold text-[#4A3B30]">
-                    FormToSheets
+                    ShelfCue
                   </span>
                 </div>
 
@@ -135,7 +135,7 @@ export function WaitingListHero() {
 
                   <div className="space-y-3">
                     <p className="text-[#4A3B30] text-base font-medium">
-                      With FormToSheets you get:
+                      With ShelfCue you get:
                     </p>
 
                     <div className="space-y-2">

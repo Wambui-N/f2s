@@ -25,6 +25,14 @@ export interface NotificationData {
  * You'll need to set up a Resend account and add the API key to your environment
  */
 export async function sendEmail(params: SendEmailParams): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  // TEMPORARY: Use mock for testing - remove this block when ready for production
+  if (process.env.NODE_ENV === 'development' && !process.env.RESEND_API_KEY) {
+    console.log('📧 MOCK EMAIL (no RESEND_API_KEY found):');
+    console.log('To:', params.to);
+    console.log('Subject:', params.subject);
+    console.log('HTML Preview:', params.html.substring(0, 200) + '...');
+    return { success: true, messageId: `mock_${Date.now()}` };
+  }
   try {
     const resendApiKey = process.env.RESEND_API_KEY;
     

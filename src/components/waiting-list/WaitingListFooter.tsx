@@ -12,7 +12,7 @@ export function WaitingListFooter() {
           <div className="md:col-span-2">
             <div className="flex items-center mb-4">
               <FileText className="h-8 w-8 text-blue-400" />
-              <span className="ml-2 text-xl font-bold">FormToSheets</span>
+              <span className="ml-2 text-xl font-bold">ShelfCue</span>
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
               Transform any form submission into organized Google Sheets
@@ -21,19 +21,19 @@ export function WaitingListFooter() {
             </p>
             <div className="flex space-x-4">
               <a
-                href="mailto:hello@formtosheets.com"
+                href="mailto:hello@shelfcue.com"
                 className="text-gray-400 hover:text-white"
               >
                 <Mail className="h-5 w-5" />
               </a>
               <a
-                href="https://twitter.com/formtosheets"
+                href="https://twitter.com/shelfcue"
                 className="text-gray-400 hover:text-white"
               >
                 <Twitter className="h-5 w-5" />
               </a>
               <a
-                href="https://github.com/formtosheets"
+                href="https://github.com/shelfcue"
                 className="text-gray-400 hover:text-white"
               >
                 <Github className="h-5 w-5" />

@@ -38,7 +38,10 @@ export default function AuthCallback() {
                 access_token: providerToken,
                 refresh_token: providerRefreshToken,
                 expires_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+                created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
+              }, {
+                onConflict: 'user_id'
               });
 
             if (tokenError) {
@@ -54,6 +57,10 @@ export default function AuthCallback() {
 
           // Redirect to dashboard after a short delay
           setTimeout(() => {
+            // Store success state in localStorage to show welcome message
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auth_success', 'true');
+            }
             router.push("/dashboard");
           }, 2000);
         } else {

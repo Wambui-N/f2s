@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendSubmissionNotification } from '@/lib/email';
+import { createCalendarEventFromSubmission } from '@/lib/googleCalendar';
+import { processFileUploads } from '@/lib/googleDrive';
 
 export async function POST(
   request: NextRequest,
@@ -8,10 +10,43 @@ export async function POST(
 ) {
   try {
     const { formId } = params;
-    const body = await request.json();
-    const { formData } = body;
+    const contentType = request.headers.get('content-type') || '';
+    
+    let formDataObj: Record<string, any>;
+    let files: Array<{ fieldName: string; file: File }> = [];
 
-    if (!formData) {
+    // Handle both JSON and FormData submissions
+    if (contentType.includes('multipart/form-data')) {
+      // Handle file uploads
+      const formData = await request.formData();
+      
+      // Extract regular form fields
+      const formDataStr = formData.get('formData') as string;
+      if (!formDataStr) {
+        return NextResponse.json(
+          { error: 'Form data is required' },
+          { status: 400 }
+        );
+      }
+      
+      formDataObj = JSON.parse(formDataStr);
+      
+      // Extract files
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File && value.size > 0) {
+          files.push({
+            fieldName: key,
+            file: value
+          });
+        }
+      }
+    } else {
+      // Handle regular JSON submission
+      const body = await request.json();
+      formDataObj = body.formData;
+    }
+
+    if (!formDataObj) {
       return NextResponse.json(
         { error: 'Form data is required' },
         { status: 400 }
@@ -44,7 +79,7 @@ export async function POST(
       .from('form_submissions')
       .insert({
         form_id: formId,
-        submission_data: formData,
+        submission_data: formDataObj,
         processing_status: 'pending'
       })
       .select('id')
@@ -58,23 +93,37 @@ export async function POST(
       );
     }
 
+    // Process file uploads (non-blocking)
+    if (files.length > 0) {
+      processFileUploads({
+        formId: formId,
+        submissionId: submission.id,
+        submissionData: formDataObj,
+        formTitle: form.title,
+        files
+      }).catch(error => {
+        console.error('File upload processing failed:', error);
+      });
+    }
+
     // Send email notification (non-blocking)
     sendSubmissionNotification({
       formId: formId,
       submissionId: submission.id,
-      submissionData: formData,
+      submissionData: formDataObj,
       formTitle: form.title
     }).catch(error => {
       console.error('Email notification failed:', error);
-      // Update submission processing status to indicate email failure
-      supabase
-        .from('form_submissions')
-        .update({ 
-          processing_status: 'completed',
-          error_message: 'Email notification failed'
-        })
-        .eq('id', submission.id)
-        .then(() => {});
+    });
+
+    // Create calendar event (non-blocking)
+    createCalendarEventFromSubmission({
+      formId: formId,
+      submissionId: submission.id,
+      submissionData: formDataObj,
+      formTitle: form.title
+    }).catch(error => {
+      console.error('Calendar event creation failed:', error);
     });
 
     // Update processing status to completed

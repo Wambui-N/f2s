@@ -17,7 +17,7 @@ export function WaitingListNav() {
             <div className="flex-shrink-0 flex items-center">
               <FileText className="h-8 w-8 text-blue-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">
-                FormToSheets
+                ShelfCue
               </span>
             </div>
           </div>

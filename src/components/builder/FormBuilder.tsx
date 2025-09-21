@@ -23,6 +23,7 @@ import { PublishFlow } from "./PublishFlow";
 import { DesignPanel } from "./DesignPanel";
 import { IntegrationsPanel } from "./IntegrationsPanel";
 import { SubmissionsPanel } from "./SubmissionsPanel";
+import { EmailNotificationsPanel } from "./EmailNotificationsPanel";
 import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   ArrowLeft,
@@ -149,7 +150,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   const [showPublishFlow, setShowPublishFlow] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
   const [testSubmissionResult, setTestSubmissionResult] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"builder" | "logic" | "integrations" | "submissions">("builder");
+  const [activeTab, setActiveTab] = useState<"builder" | "logic" | "integrations" | "submissions" | "notifications">("builder");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [formVersion, setFormVersion] = useState(0);
 
@@ -692,6 +693,10 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                 <BarChart3 className="w-4 h-4" />
                 <span>Submissions</span>
               </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center space-x-2">
+                <Mail className="w-4 h-4" />
+                <span>Notifications</span>
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="builder" className="flex-grow">
@@ -800,6 +805,14 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
             
             <TabsContent value="submissions" className="flex-grow">
               <SubmissionsPanel key={formVersion} formData={formData} />
+            </TabsContent>
+            
+            <TabsContent value="notifications" className="flex-grow">
+              <EmailNotificationsPanel 
+                formId={formData.id} 
+                formTitle={formData.title}
+                formData={formData}
+              />
             </TabsContent>
           </Tabs>
         </div>

@@ -19,7 +19,7 @@ export default function Footer() {
                 onClick={() => scrollToSection("hero")}
                 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
               >
-                FormToSheets
+                ShelfCue
               </button>
             </div>
             <p className="text-gray-400 mb-6">

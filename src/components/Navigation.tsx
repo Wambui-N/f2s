@@ -2,14 +2,25 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleGetStarted = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Error signing in:", error);
     }
     setIsMenuOpen(false);
   };
@@ -25,7 +36,7 @@ export default function Navigation() {
               onClick={() => scrollToSection("hero")}
               className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:bg-transparent"
             >
-              FormToSheets
+              ShelfCue
             </Button>
           </div>
 
@@ -59,7 +70,7 @@ export default function Navigation() {
           {/* CTA Button */}
           <div className="hidden md:block">
             <Button
-              onClick={() => scrollToSection("hero")}
+              onClick={handleGetStarted}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               Get Started
@@ -125,7 +136,7 @@ export default function Navigation() {
                 Reviews
               </Button>
               <Button
-                onClick={() => scrollToSection("hero")}
+                onClick={handleGetStarted}
                 className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 Get Started

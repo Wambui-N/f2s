@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FormToSheets - Transform Forms into Google Sheets Automatically",
+  title: "ShelfCue - Transform Forms into Google Sheets Automatically",
   description:
     "Convert any form submission into organized Google Sheets automatically. No coding required. No complex setup. Just pure simplicity.",
 };

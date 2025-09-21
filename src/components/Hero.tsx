@@ -2,12 +2,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Hero() {
+  const { signInWithGoogle } = useAuth();
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleGetStarted = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("Error signing in:", error);
     }
   };
 
@@ -53,19 +64,19 @@ export default function Hero() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Button
-              onClick={() => scrollToSection("demo")}
+              onClick={handleGetStarted}
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg font-semibold px-8 py-4"
             >
-              Try Interactive Demo
+              Get Started Free
             </Button>
             <Button
               variant="outline"
-              onClick={() => scrollToSection("pricing")}
+              onClick={() => scrollToSection("demo")}
               size="lg"
               className="text-lg font-semibold px-8 py-4"
             >
-              View Pricing
+              Try Interactive Demo
             </Button>
           </div>
 

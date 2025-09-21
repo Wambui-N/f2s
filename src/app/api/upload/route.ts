@@ -1,56 +1,78 @@
-import { createClient } from "@supabase/supabase-js";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { processFileUploads } from '@/lib/googleDrive';
 
-// Create a Supabase client with the service role key
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
-
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File;
-    const formId = formData.get("formId") as string;
-    const fieldId = formData.get("fieldId") as string;
+    
+    const formId = formData.get('formId') as string;
+    const submissionId = formData.get('submissionId') as string;
+    const submissionDataStr = formData.get('submissionData') as string;
+    const formTitle = formData.get('formTitle') as string;
 
-    if (!file || !formId || !fieldId) {
+    if (!formId || !submissionId || !submissionDataStr || !formTitle) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: 'Missing required parameters' },
         { status: 400 }
       );
     }
 
-    // You would fetch form/field details here to validate against,
-    // e.g., allowed file types, max size.
-    // This is a simplified example.
-
-    const filePath = `${formId}/${fieldId}/${Date.now()}-${file.name}`;
-
-    const { data, error }_ = await supabaseAdmin.storage
-      .from("form-uploads")
-      .upload(filePath, file);
-
-    if (error) {
-      console.error("Supabase upload error:", error);
+    let submissionData: Record<string, any>;
+    try {
+      submissionData = JSON.parse(submissionDataStr);
+    } catch (error) {
       return NextResponse.json(
-        { error: "Failed to upload file." },
+        { error: 'Invalid submission data format' },
+        { status: 400 }
+      );
+    }
+
+    // Extract files from form data
+    const files: Array<{ fieldName: string; file: File }> = [];
+    
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File && value.size > 0) {
+        files.push({
+          fieldName: key,
+          file: value
+        });
+      }
+    }
+
+    if (files.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'No files to upload',
+        uploadedFiles: []
+      });
+    }
+
+    // Process file uploads
+    const result = await processFileUploads({
+      formId,
+      submissionId,
+      submissionData,
+      formTitle,
+      files
+    });
+
+    if (result.success) {
+      return NextResponse.json({
+        success: true,
+        uploadedFiles: result.uploadedFiles || [],
+        message: `Successfully uploaded ${files.length} file(s)`
+      });
+    } else {
+      return NextResponse.json(
+        { error: result.error || 'File upload failed' },
         { status: 500 }
       );
     }
 
-    // Construct the public URL
-    const {
-      data: { publicUrl },
-    } = supabaseAdmin.storage.from("form-uploads").getPublicUrl(filePath);
-
-    return NextResponse.json({ success: true, url: publicUrl });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Upload API error:", error);
+    console.error('File upload API error:', error);
     return NextResponse.json(
-      { error: "Internal server error", details: errorMessage },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
