@@ -1,30 +1,46 @@
 "use client";
 
-import Navigation from "@/components/Navigation";
-import Hero from "@/components/Hero";
-import Features from "@/components/Features";
-import { InteractiveDemo } from "@/components/InteractiveDemo";
-import Comparison from "@/components/Comparison";
-import Reviews from "@/components/Reviews";
-import { Pricing } from "@/components/Pricing";
-import { FAQs } from "@/components/FAQs";
-import CTASection from "@/components/CTASection";
-import Footer from "@/components/Footer";
+import React from "react";
+import { Navigation } from "@/components/Navigation";
+import { Hero } from "@/components/sections/Hero";
+import { Benefits } from "@/components/sections/Benefits";
+import { Demo } from "@/components/sections/Demo";
+import { Comparison } from "@/components/sections/Comparison";
+import { Pricing } from "@/components/sections/Pricing";
+import { CTASection } from "@/components/sections/CTASection";
+import { FAQs } from "@/components/sections/FAQs";
+import { Footer } from "@/components/sections/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen bg-white">
       <Navigation />
-      <main className="flex-grow">
+      
+      {/* Main Content */}
+      <main>
+        {/* Hero Section */}
         <Hero />
-        <Features />
-        <InteractiveDemo />
+
+        {/* Benefits Section */}
+        <Benefits />
+
+        {/* Demo Section */}
+        <Demo />
+
+        {/* Comparison Section */}
         <Comparison />
-        <Reviews />
+
+        {/* Pricing Section */}
         <Pricing />
-        <FAQs />
+
+        {/* CTA Section */}
         <CTASection />
+
+        {/* FAQs Section */}
+        <FAQs />
       </main>
+
+      {/* Footer */}
       <Footer />
     </div>
   );
