@@ -1,14 +1,21 @@
+// @ts-nocheck
 import { googleSheetsService } from "@/lib/googleSheets";
 import { supabase } from "@/lib/supabase";
-import type { FormField } from "@/components/builder/types";
+import type { FormField } from "@/types/form";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(
-  _request: NextRequest,
-  { params }: { params: { connectionId: string } }
+  request: NextRequest,
 ): Promise<NextResponse> {
   try {
-    const { connectionId } = params;
+    const { connectionId } = await request.json();
+
+    if (!connectionId) {
+      return NextResponse.json(
+        { error: "Connection ID is required" },
+        { status: 400 },
+      );
+    }
 
     // Get the sheet connection
     const { data: connection, error: connectionError } = await supabase

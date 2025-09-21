@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { FormData, FormField } from "./types";
+import type { FormData, FormField } from "@/types/form";
 import { 
   Smartphone, 
   Monitor, 
@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Sparkles,
   Zap,
-  Shield
+  Shield,
+  Upload,
+  Eye
 } from "lucide-react";
 import { generateMockData } from "@/lib/mockData";
 
@@ -119,10 +121,11 @@ export function FormPreview({
         }
       });
 
-      const response = await fetch(`/api/forms/${formData.id}/submit`, {
+      const response = await fetch(`/api/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          formId: formData.id,
           formData: submissionData,
           fieldMappings,
         }),

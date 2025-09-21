@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Navigation } from "@/components/Navigation";
+import Navigation from "@/components/Navigation";
 import { Hero } from "@/components/sections/Hero";
 import { Benefits } from "@/components/sections/Benefits";
 import { Demo } from "@/components/sections/Demo";

@@ -56,6 +56,7 @@ export function IntegrationsPanel({
   const [existingConnections, setExistingConnections] = useState<SheetConnection[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [newSheetName, setNewSheetName] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const fetchConnectionStatus = async () => {
@@ -191,6 +192,24 @@ export function IntegrationsPanel({
       setError("Failed to disconnect sheet.");
     } else {
       onConnectionUpdate();
+    }
+  };
+
+  const syncHeaders = async (connectionId: string) => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch(`/api/sheets/sync-headers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ connectionId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      alert(`Synced ${data.headerCount} headers successfully!`);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsSyncing(false);
     }
   };
 

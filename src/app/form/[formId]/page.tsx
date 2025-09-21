@@ -3,16 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { FormPreview } from "@/components/builder/FormPreview";
 import { supabase } from "@/lib/supabase";
-import { FormData } from "@/components/builder/types";
+import { FormData } from "@/types/form";
 import { trackFormViewAuto } from "@/lib/analytics";
 
-interface FormPageProps {
-  params: {
-    formId: string;
-  };
-}
-
-export default function FormPage({ params }: FormPageProps) {
+export default function FormPage({
+  params,
+}: {
+  params: { formId: string };
+}) {
   const { formId } = params;
   const [formData, setFormData] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,10 +46,10 @@ export default function FormPage({ params }: FormPageProps) {
 
   const handleSubmit = async (submissionData: Record<string, any>) => {
     try {
-      const response = await fetch(`/api/forms/${formId}/submit`, {
+      const response = await fetch(`/api/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData: submissionData }),
+        body: JSON.stringify({ formId: formId, formData: submissionData }),
       });
 
       if (!response.ok) {

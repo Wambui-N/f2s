@@ -181,8 +181,10 @@ function SettingsContent() {
 
   const handleSyncHeaders = async (connectionId: string) => {
     try {
-      const response = await fetch(`/api/sheets/${connectionId}/sync-headers`, {
+      const response = await fetch(`/api/sheets/sync-headers`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ connectionId }),
       });
 
       const result = await response.json();

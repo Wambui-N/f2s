@@ -36,7 +36,7 @@ export function Hero() {
             <span className="text-[#f95716]">Sheets</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 mb-12  mx-auto leading-relaxed">
             Create beautiful forms that automatically sync with Google Sheets.
             No code, no complexity, just pure simplicity.
           </p>
@@ -58,7 +58,7 @@ export function Hero() {
           </div>
 
           {/* Stats */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8  mx-auto">
             {[
               { number: "2 min", label: "Setup Time" },
               { number: "100%", label: "No-Code" },
