@@ -8,6 +8,7 @@ import Comparison from "@/components/Comparison";
 import Reviews from "@/components/Reviews";
 import { Pricing } from "@/components/Pricing";
 import { FAQs } from "@/components/FAQs";
+import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
 
 export default function LandingPage() {
@@ -22,6 +23,7 @@ export default function LandingPage() {
         <Reviews />
         <Pricing />
         <FAQs />
+        <CTASection />
       </main>
       <Footer />
     </div>

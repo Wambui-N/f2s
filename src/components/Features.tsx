@@ -1,378 +1,226 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { 
+  Zap, 
+  Palette, 
+  Upload, 
+  GitBranch, 
+  Code, 
+  RefreshCw, 
+  CheckCircle, 
+  Smartphone 
+} from "lucide-react";
+
 export default function Features() {
   const features = [
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      ),
-      title: "Google Sheets as Database",
-      description:
-        "Native integration, not an add-on. Real-time sync, two-way updates, and validations directly from Sheets.",
-      color: "blue",
+      icon: <Zap className="w-8 h-8" />,
+      title: "No Manual Copy-Paste",
+      description: "Forms sync directly to Google Sheets in real-time. No more tedious data entry or missed submissions.",
+      color: "#f95716",
+      bgColor: "#fff8e8"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
-          />
-        </svg>
-      ),
-      title: "Beautiful Branded Forms",
-      description:
-        "Modern, mobile-first forms with your logo, colors, and fonts. AI design helper matches your website automatically.",
-      color: "purple",
+      icon: <Palette className="w-8 h-8" />,
+      title: "Beautiful by Default",
+      description: "Professional, branded forms that match your website. No ugly Google Forms styling or paid plan restrictions.",
+      color: "#2c5e2a",
+      bgColor: "#fcd4f0"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-          />
-        </svg>
-      ),
-      title: "Smart File Uploads",
-      description:
-        "Uploads stored neatly in Google Drive with automatic renaming. Dead-simple for SMBs to access and manage.",
-      color: "green",
+      icon: <Upload className="w-8 h-8" />,
+      title: "Smart File Organization",
+      description: "File uploads stored neatly in Google Drive with automatic renaming. Dead-simple for teams to access and manage.",
+      color: "#442c02",
+      bgColor: "#fff8e8"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 10V3L4 14h7v7l9-11h-7z"
-          />
-        </svg>
-      ),
+      icon: <GitBranch className="w-8 h-8" />,
       title: "Visual Flow Builder",
-      description:
-        "Drag boxes, connect arrows, done. Simple conditional logic that SMBs understand without a manual.",
-      color: "orange",
+      description: "Drag boxes, connect arrows, done. Simple conditional logic that teams understand without a manual.",
+      color: "#f95716",
+      bgColor: "#fcd4f0"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-          />
-        </svg>
-      ),
+      icon: <Code className="w-8 h-8" />,
       title: "Dual Experience",
-      description:
-        "Non-tech friendly: drag-and-drop templates. Dev-friendly: custom CSS, scripts, and API hooks.",
-      color: "red",
+      description: "Non-tech friendly: drag-and-drop templates. Dev-friendly: custom CSS, scripts, and API hooks.",
+      color: "#2c5e2a",
+      bgColor: "#fff8e8"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
-      ),
+      icon: <RefreshCw className="w-8 h-8" />,
       title: "Real-time Two-way Sync",
-      description:
-        "Edit in Sheets → form updates instantly. No more manual exports or data silos.",
-      color: "indigo",
+      description: "Edit in Sheets → form updates instantly. No more manual exports or data silos.",
+      color: "#442c02",
+      bgColor: "#fcd4f0"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
+      icon: <CheckCircle className="w-8 h-8" />,
       title: "Sheet-based Validations",
-      description:
-        "Set validation rules directly in your Google Sheets. Dropdowns, required fields, and data types sync automatically.",
-      color: "teal",
+      description: "Set validation rules directly in Google Sheets. Dropdowns, required fields, and data types sync automatically.",
+      color: "#f95716",
+      bgColor: "#fff8e8"
     },
     {
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-          />
-        </svg>
-      ),
+      icon: <Smartphone className="w-8 h-8" />,
       title: "Mobile-First Design",
-      description:
-        "Every form looks perfect on phones and tablets. Your customers get a professional experience everywhere.",
-      color: "pink",
-    },
+      description: "Every form looks perfect on phones and tablets. Your customers get a professional experience everywhere.",
+      color: "#2c5e2a",
+      bgColor: "#fcd4f0"
+    }
   ];
 
-  const getColorClasses = (color: string) => {
-    const colorMap = {
-      blue: "from-blue-500 to-blue-600",
-      purple: "from-purple-500 to-purple-600",
-      green: "from-green-500 to-green-600",
-      orange: "from-orange-500 to-orange-600",
-      red: "from-red-500 to-red-600",
-      indigo: "from-indigo-500 to-indigo-600",
-      teal: "from-teal-500 to-teal-600",
-      pink: "from-pink-500 to-pink-600",
-    };
-    return (
-      colorMap[color as keyof typeof colorMap] || "from-blue-500 to-blue-600"
-    );
-  };
-
   return (
-    <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+    <section className="py-24 bg-white relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <motion.div 
+          className="absolute top-20 right-10 w-40 h-40 rounded-full opacity-5"
+          style={{ backgroundColor: "#f95716" }}
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ 
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-32 left-16 w-32 h-32 rounded-full opacity-8"
+          style={{ backgroundColor: "#2c5e2a" }}
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            rotate: [360, 180, 0]
+          }}
+          transition={{ 
+            duration: 18,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <motion.div 
+          className="text-center mb-20"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <h2 
+            className="text-5xl md:text-6xl font-bold mb-6"
+            style={{ color: "#442c02" }}
+          >
             Built for Small Business
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-            While others treat Google Sheets as an add-on, we make it your
-            native database. Beautiful forms that live where you already work.
+          <p 
+            className="text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed"
+            style={{ color: "#442c02" }}
+          >
+            While others treat Google Sheets as an add-on, we make it your native database. 
+            Beautiful forms that live where you already work.
           </p>
-        </div>
+        </motion.div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div
+            <motion.div
               key={index}
-              className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:scale-105"
+              className="group cursor-pointer"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                y: -10,
+                transition: { duration: 0.3 }
+              }}
             >
-              <div
-                className={`w-16 h-16 bg-gradient-to-r ${getColorClasses(feature.color)} rounded-2xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300`}
+              <div 
+                className="p-8 rounded-3xl border-2 border-white shadow-lg hover:shadow-2xl transition-all duration-500 h-full"
+                style={{ backgroundColor: feature.bgColor }}
               >
-                {feature.icon}
+                {/* Icon */}
+                <motion.div
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                  style={{ backgroundColor: feature.color }}
+                  whileHover={{ rotate: 5 }}
+                >
+                  <div style={{ color: "white" }}>
+                    {feature.icon}
+                  </div>
+                </motion.div>
+
+                {/* Content */}
+                <h3 
+                  className="text-xl font-bold mb-4 group-hover:text-opacity-90 transition-all duration-300"
+                  style={{ color: "#442c02" }}
+                >
+                  {feature.title}
+                </h3>
+                <p 
+                  className="leading-relaxed group-hover:text-opacity-80 transition-all duration-300"
+                  style={{ color: "#442c02" }}
+                >
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        {/* Additional Features */}
-        <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        {/* Bottom CTA */}
+        <motion.div 
+          className="text-center mt-20"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          viewport={{ once: true }}
+        >
+          <div 
+            className="inline-block p-8 rounded-3xl shadow-xl"
+            style={{ backgroundColor: "#2c5e2a" }}
+          >
+            <h3 className="text-2xl font-bold text-white mb-4">
               Everything Small Business Needs
             </h3>
-            <p className="text-gray-600">
-              Built specifically for teams that live in Google Sheets. No
-              learning curve, no complexity.
+            <p className="text-green-100 mb-6 max-w-2xl">
+              Built specifically for teams that live in Google Sheets. No learning curve, no complexity.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-white">
+              {[
+                "AI Design Helper",
+                "Auto File Renaming", 
+                "Visual Flow Builder",
+                "Custom CSS Support",
+                "Sheet-based Dropdowns",
+                "API Hooks",
+                "Google Drive Integration",
+                "Mobile-First Design"
+              ].map((item, index) => (
+                <motion.div 
+                  key={item}
+                  className="flex items-center space-x-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 + (index * 0.1) }}
+                  viewport={{ once: true }}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">AI Design Helper</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">Auto File Renaming</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">Visual Flow Builder</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">Custom CSS Support</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">Sheet-based Dropdowns</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">API Hooks</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">Google Drive Integration</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <span className="text-gray-700">Freelancer-Friendly</span>
+                  <div className="w-2 h-2 bg-white rounded-full flex-shrink-0"></div>
+                  <span className="text-sm font-medium">{item}</span>
+                </motion.div>
+              ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

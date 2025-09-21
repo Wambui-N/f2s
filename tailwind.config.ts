@@ -9,6 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Brand colors
+        'brand-orange': '#f95716',
+        'brand-pink': '#fcd4f0', 
+        'brand-brown': '#442c02',
+        'brand-beige': '#fff8e8',
+        'brand-green': '#2c5e2a',
         brand: {
           50: "var(--color-brand-50)",
           100: "var(--color-brand-100)",
@@ -71,6 +77,9 @@ const config: Config = {
         "slide-up": "slideUp 0.4s ease-out",
         "scale-in": "scaleIn 0.3s ease-out",
         "shimmer": "shimmer 1.5s infinite",
+        "float": "float 6s ease-in-out infinite",
+        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "bounce-slow": "bounce 2s infinite",
       },
       keyframes: {
         fadeIn: {
@@ -88,6 +97,10 @@ const config: Config = {
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
         },
       },
       fontFamily: {

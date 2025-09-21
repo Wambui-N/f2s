@@ -1,231 +1,281 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { CheckCircle, X, Crown } from "lucide-react";
+
 export default function Comparison() {
   const features = [
     {
       feature: "Google Sheets Integration",
-      formToSheets: "✓ Native Database",
-      zapier: "✗ Add-on Only",
-      googleForms: "✓ Built-in",
-      typeform: "✗ Manual Export",
-      jotform: "✗ Manual Export",
+      shelfcue: { status: "✓", text: "Native Database", highlight: true },
+      zapier: { status: "✗", text: "Add-on Only" },
+      manual: { status: "✗", text: "No Integration" },
     },
     {
       feature: "Two-way Sync",
-      formToSheets: "✓ Edit in Sheets → Form Updates",
-      zapier: "✗ One-way Only",
-      googleForms: "✗ No Sync",
-      typeform: "✗ No Sync",
-      jotform: "✗ No Sync",
+      shelfcue: { status: "✓", text: "Edit in Sheets → Form Updates", highlight: true },
+      zapier: { status: "✗", text: "One-way Only" },
+      manual: { status: "✗", text: "No Sync" },
     },
     {
       feature: "Beautiful Forms",
-      formToSheets: "✓ Branded by Default",
-      zapier: "✗ Ugly Forms",
-      googleForms: "✗ Google Styling",
-      typeform: "✓ Paid Plans Only",
-      jotform: "✓ Paid Plans Only",
+      shelfcue: { status: "✓", text: "Branded by Default", highlight: true },
+      zapier: { status: "✗", text: "Ugly Forms" },
+      manual: { status: "✗", text: "Basic HTML" },
     },
     {
       feature: "File Uploads",
-      formToSheets: "✓ Auto-organized in Drive",
-      zapier: "✗ Complex Setup",
-      googleForms: "✗ Limited Storage",
-      typeform: "✓ Paid Plans",
-      jotform: "✓ Paid Plans",
+      shelfcue: { status: "✓", text: "Auto-organized in Drive", highlight: true },
+      zapier: { status: "✗", text: "Complex Setup" },
+      manual: { status: "✗", text: "Manual Handling" },
     },
     {
       feature: "Conditional Logic",
-      formToSheets: "✓ Visual Flow Builder",
-      zapier: "✗ Complex Rules",
-      googleForms: "✗ Basic Only",
-      typeform: "✓ Complex Setup",
-      jotform: "✓ Complex Setup",
+      shelfcue: { status: "✓", text: "Visual Flow Builder", highlight: true },
+      zapier: { status: "✗", text: "Complex Rules" },
+      manual: { status: "✗", text: "Not Possible" },
     },
     {
-      feature: "Sheet-based Validations",
-      formToSheets: "✓ Dropdowns from Sheets",
-      zapier: "✗ No Integration",
-      googleForms: "✗ Limited Options",
-      typeform: "✗ No Integration",
-      jotform: "✗ No Integration",
+      feature: "Setup Time",
+      shelfcue: { status: "✓", text: "2 Minutes", highlight: true },
+      zapier: { status: "✗", text: "30+ Minutes" },
+      manual: { status: "✗", text: "Hours" },
     },
     {
       feature: "Small Business Focus",
-      formToSheets: "✓ Built for SMBs",
-      zapier: "✗ Enterprise Focus",
-      googleForms: "✓ Free but Ugly",
-      typeform: "✗ Enterprise Focus",
-      jotform: "✗ Enterprise Focus",
+      shelfcue: { status: "✓", text: "Built for SMBs", highlight: true },
+      zapier: { status: "✗", text: "Enterprise Focus" },
+      manual: { status: "✗", text: "DIY Approach" },
     },
   ];
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Google Sheets Native vs. Everyone Else
+    <section className="py-24 bg-white relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <motion.div 
+          className="absolute top-16 left-10 w-24 h-24 rounded-full opacity-8"
+          style={{ backgroundColor: "#fcd4f0" }}
+          animate={{ 
+            scale: [1, 1.3, 1],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ 
+            duration: 12,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-20 right-16 w-32 h-32 rounded-full opacity-6"
+          style={{ backgroundColor: "#fff8e8" }}
+          animate={{ 
+            y: [-15, 15, -15],
+            x: [-8, 8, -8]
+          }}
+          transition={{ 
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <h2 
+            className="text-5xl md:text-6xl font-bold mb-6"
+            style={{ color: "#442c02" }}
+          >
+            Shelfcue vs Other Tools
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-            While others treat Google Sheets as an add-on, we make it your
-            native database. See the difference that real integration makes.
+          <p 
+            className="text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed"
+            style={{ color: "#442c02" }}
+          >
+            While others treat Google Sheets as an add-on, we make it your native database. 
+            See the difference that real integration makes.
           </p>
-        </div>
+        </motion.div>
 
         {/* Comparison Table */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <motion.div 
+          className="rounded-3xl shadow-2xl border-2 overflow-hidden max-w-6xl mx-auto"
+          style={{ borderColor: "#2c5e2a" }}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
+              {/* Header */}
+              <thead style={{ backgroundColor: "#fff8e8" }}>
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  <th className="px-8 py-6 text-left text-lg font-bold" style={{ color: "#442c02" }}>
                     Feature
                   </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-blue-600 bg-blue-100">
-                    <div className="flex items-center justify-center">
-                      <span className="mr-2">🏆</span>
-                      FormToSheets
+                  <th 
+                    className="px-8 py-6 text-center text-lg font-bold text-white relative"
+                    style={{ backgroundColor: "#2c5e2a" }}
+                  >
+                    <motion.div 
+                      className="flex items-center justify-center"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <Crown className="w-5 h-5 mr-2" />
+                      Shelfcue
+                    </motion.div>
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                      <div 
+                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        style={{ backgroundColor: "#f95716", color: "white" }}
+                      >
+                        BEST
+                      </div>
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                  <th 
+                    className="px-8 py-6 text-center text-lg font-semibold border-l-2"
+                    style={{ color: "#442c02", borderColor: "#2c5e2a" }}
+                  >
                     Zapier
                   </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                    Google Forms
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                    Typeform
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                    Jotform
+                  <th 
+                    className="px-8 py-6 text-center text-lg font-semibold border-l-2"
+                    style={{ color: "#442c02", borderColor: "#2c5e2a" }}
+                  >
+                    Manual Entry
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              
+              {/* Body */}
+              <tbody>
                 {features.map((item, index) => (
-                  <tr
+                  <motion.tr
                     key={index}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    className={index % 2 === 0 ? "bg-white" : ""}
+                    style={{ backgroundColor: index % 2 === 1 ? "#fff8e8" : "white" }}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 + (index * 0.1) }}
+                    viewport={{ once: true }}
+                    whileHover={{ backgroundColor: "#fcd4f0" }}
                   >
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td 
+                      className="px-8 py-6 text-lg font-semibold border-r-2"
+                      style={{ color: "#442c02", borderColor: "#2c5e2a" }}
+                    >
                       {item.feature}
                     </td>
-                    <td className="px-6 py-4 text-center text-sm font-semibold text-blue-600 bg-blue-50">
-                      {item.formToSheets}
+                    <td 
+                      className="px-8 py-6 text-center font-bold text-white border-r-2"
+                      style={{ backgroundColor: "#2c5e2a", borderColor: "#2c5e2a" }}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        className="flex items-center justify-center space-x-2"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        <span>{item.shelfcue.text}</span>
+                      </motion.div>
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">
-                      {item.zapier}
+                    <td 
+                      className="px-8 py-6 text-center border-r-2"
+                      style={{ color: "#442c02", borderColor: "#2c5e2a" }}
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <X className="w-5 h-5 text-red-500" />
+                        <span>{item.zapier.text}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">
-                      {item.googleForms}
+                    <td 
+                      className="px-8 py-6 text-center"
+                      style={{ color: "#442c02" }}
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <X className="w-5 h-5 text-red-500" />
+                        <span>{item.manual.text}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">
-                      {item.typeform}
-                    </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">
-                      {item.jotform}
-                    </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
 
         {/* Key Differentiators */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl">
-            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <motion.div 
+          className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          viewport={{ once: true }}
+        >
+          {[
+            {
+              title: "Native Database",
+              description: "Google Sheets isn't an add-on—it's your database. Two-way sync, real-time updates, and validations from Sheets.",
+              color: "#f95716",
+              bgColor: "#fff8e8"
+            },
+            {
+              title: "Beautiful by Default", 
+              description: "Every form looks professional and branded. No ugly Google Forms styling or paid plan restrictions.",
+              color: "#2c5e2a",
+              bgColor: "#fcd4f0"
+            },
+            {
+              title: "Visual Flow Builder",
+              description: "Drag boxes, connect arrows, done. Conditional logic that small businesses understand without a manual.",
+              color: "#442c02",
+              bgColor: "#fff8e8"
+            }
+          ].map((differentiator, index) => (
+            <motion.div 
+              key={index}
+              className="text-center p-8 rounded-3xl border-2 border-white shadow-lg hover:shadow-2xl transition-all duration-500 group"
+              style={{ backgroundColor: differentiator.bgColor }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 + (index * 0.2) }}
+              viewport={{ once: true }}
+              whileHover={{ 
+                y: -8,
+                scale: 1.02
+              }}
+            >
+              <motion.div 
+                className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300"
+                style={{ backgroundColor: differentiator.color }}
+                whileHover={{ rotate: 5 }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
-              Native Database
-            </h3>
-            <p className="text-gray-600">
-              Google Sheets isn't an add-on—it's your database. Two-way sync,
-              real-time updates, and validations from Sheets.
-            </p>
-          </div>
-
-          <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl">
-            <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                <div className="w-10 h-10 bg-white rounded-xl"></div>
+              </motion.div>
+              <h3 
+                className="text-2xl font-bold mb-4"
+                style={{ color: "#442c02" }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
-              Beautiful by Default
-            </h3>
-            <p className="text-gray-600">
-              Every form looks professional and branded. No ugly Google Forms
-              styling or paid plan restrictions.
-            </p>
-          </div>
-
-          <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                {differentiator.title}
+              </h3>
+              <p 
+                className="leading-relaxed"
+                style={{ color: "#442c02" }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
-              Visual Flow Builder
-            </h3>
-            <p className="text-gray-600">
-              Drag boxes, connect arrows, done. Conditional logic that small
-              businesses understand without a manual.
-            </p>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-16 text-center">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">
-              Ready to Make the Switch?
-            </h3>
-            <p className="text-blue-100 mb-6">
-              Join thousands of users who've simplified their workflow with
-              FormToSheets
-            </p>
-            <button className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
-              Start Free Trial
-            </button>
-          </div>
-        </div>
+                {differentiator.description}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
