@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const FAQs = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);

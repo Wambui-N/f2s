@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Volume2, Maximize } from "lucide-react";
+import { Play, Pause, Volume2, Maximize, Zap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const InteractiveDemo = () => {
