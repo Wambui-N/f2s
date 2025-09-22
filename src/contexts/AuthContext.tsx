@@ -50,10 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
+    const redirectUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/dashboard`
+      : 'https://shelfcue.com/dashboard';
+      
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: redirectUrl,
         scopes:
           "openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
         queryParams: {
@@ -69,10 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const reconnectWithGoogle = async () => {
+    const redirectUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/dashboard/settings`
+      : 'https://shelfcue.com/dashboard/settings';
+      
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard/settings`,
+        redirectTo: redirectUrl,
         scopes:
           "openid email profile https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
         queryParams: {

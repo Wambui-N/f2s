@@ -28,7 +28,9 @@ export function GoogleConnectButton({
             access_type: "offline",
             prompt: "consent",
           },
-          redirectTo: `${window.location.origin}/dashboard/settings`,
+          redirectTo: typeof window !== 'undefined' 
+            ? `${window.location.origin}/dashboard/settings`
+            : 'https://shelfcue.com/dashboard/settings',
         },
       });
 

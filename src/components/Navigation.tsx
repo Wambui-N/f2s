@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, user } = useAuth();
+  const router = useRouter();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -19,10 +21,16 @@ export default function Navigation() {
   };
 
   const handleGetStarted = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error("Error signing in:", error);
+    if (user) {
+      // User is signed in, redirect to dashboard
+      router.push('/dashboard');
+    } else {
+      // User is not signed in, trigger sign in
+      try {
+        await signInWithGoogle();
+      } catch (error) {
+        console.error("Error signing in:", error);
+      }
     }
     setIsMenuOpen(false);
   };
@@ -69,7 +77,7 @@ export default function Navigation() {
               onClick={handleGetStarted}
               className="bg-[#2c5e2a] hover:bg-[#234b21] text-white"
             >
-              Get Started
+              {user ? 'Dashboard' : 'Get Started'}
             </Button>
           </div>
 
@@ -111,7 +119,7 @@ export default function Navigation() {
                     onClick={handleGetStarted}
                     className="w-full bg-[#2c5e2a] hover:bg-[#234b21] text-white"
                   >
-                    Get Started
+                    {user ? 'Dashboard' : 'Get Started'}
                   </Button>
                 </div>
               </div>
