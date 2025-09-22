@@ -36,6 +36,7 @@ import {
   Zap,
   Activity,
   ArrowRight,
+  Download,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -169,6 +170,36 @@ function DashboardContent() {
     setFormToDelete(null);
   };
 
+  const exportToCSV = async (formId: string) => {
+    try {
+      const response = await fetch("/api/export-csv", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ formId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export CSV");
+      }
+
+      // Create a blob and download it
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `form-${formId}-submissions.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      alert("Failed to export CSV. Please try again.");
+    }
+  };
+
   const copyFormUrl = (formId: string) => {
     const url = `${window.location.origin}/form/${formId}`;
     navigator.clipboard.writeText(url);
@@ -211,22 +242,25 @@ function DashboardContent() {
 
   return (
     <>
-      <main className="grid flex-1 items-start gap-8 p-6 sm:p-8 md:gap-12">
+      <main className="min-h-screen bg-gradient-to-b from-[#fff8e8] to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Header */}
-        <PageHeader
-          title="Dashboard"
-          description="Manage your forms and track submissions in real-time"
-          actions={
-            <Button 
-              size="lg" 
-              onClick={() => setCreateModalOpen(true)}
-              className="btn-primary group"
-            >
-              <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
-              Create New Form
-            </Button>
-          }
-        />
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-[#2c5e2a]">
+            Your Dashboard
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 mx-auto">
+            Manage your forms and track submissions in real-time
+          </p>
+          <Button 
+            size="lg" 
+            onClick={() => setCreateModalOpen(true)}
+            className="bg-[#2c5e2a] hover:bg-[#234b21] text-white px-8 py-3 text-lg font-semibold rounded-2xl group"
+          >
+            <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
+            Create New Form
+          </Button>
+        </div>
 
         {/* Enhanced Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -270,15 +304,15 @@ function DashboardContent() {
         </div>
 
         {/* Enhanced Forms List */}
-        <Card className="shadow-lg">
-          <CardHeader>
+        <Card className="shadow-xl rounded-3xl mt-6 border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center text-xl">
-                <Activity className="mr-3 h-5 w-5" />
+              <CardTitle className="flex items-center text-2xl font-bold text-[#2c5e2a]">
+                <Activity className="mr-3 h-6 w-6" />
                 Your Forms
               </CardTitle>
               <div className="flex items-center space-x-2">
-                <Badge variant="secondary" className="px-3 py-1">
+                <Badge variant="secondary" className="px-4 py-2 rounded-full bg-[#2c5e2a]/10 text-[#2c5e2a] border-0">
                   {forms.length} total
                 </Badge>
               </div>
@@ -300,13 +334,13 @@ function DashboardContent() {
                 {forms.map((form: any) => (
                   <Card 
                     key={form.id}
-                    className="transition-all duration-200 hover:shadow-md hover:scale-[1.01] border-l-4 border-l-transparent hover:border-l-blue-500"
+                    className="transition-all duration-300 hover:shadow-xl hover:scale-[1.02] rounded-2xl border-0 bg-white/60 backdrop-blur-sm hover:bg-white/80"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-3">
-                            <h3 className="font-semibold text-lg">{form.title}</h3>
+                            <h3 className="font-bold text-xl text-[#2c5e2a]">{form.title}</h3>
                             <StatusBadge
                               status={form.status === "published" ? "success" : "pending"}
                               text={form.status === "published" ? "Published" : "Draft"}
@@ -361,7 +395,7 @@ function DashboardContent() {
                             variant="outline"
                             size="sm"
                             onClick={() => copyFormUrl(form.id)}
-                            className="hover:bg-blue-50"
+                            className="hover:bg-[#2c5e2a]/10 hover:text-[#2c5e2a] rounded-xl border-[#2c5e2a]/20"
                           >
                             {copiedFormId === form.id ? (
                               <>
@@ -377,14 +411,14 @@ function DashboardContent() {
                           </Button>
                           
                           <Link href={`/editor/${form.id}`}>
-                            <Button variant="outline" size="sm" className="hover:bg-blue-50">
+                            <Button variant="outline" size="sm" className="hover:bg-[#f95716]/10 hover:text-[#f95716] rounded-xl border-[#f95716]/20">
                               <Edit className="w-4 h-4 mr-1" />
                               Edit
                             </Button>
                           </Link>
                           
                           <Link href={`/form/${form.id}`}>
-                            <Button variant="outline" size="sm" className="hover:bg-purple-50">
+                            <Button variant="outline" size="sm" className="hover:bg-[#2c5e2a]/10 hover:text-[#2c5e2a] rounded-xl border-[#2c5e2a]/20">
                               <Eye className="w-4 h-4 mr-1" />
                               Preview
                             </Button>
@@ -393,8 +427,18 @@ function DashboardContent() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => exportToCSV(form.id)}
+                            className="hover:bg-blue-50 hover:text-blue-600 rounded-xl border-blue-200"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Export CSV
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => openDeleteDialog(form)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl border-red-200"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -458,6 +502,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
         </div> */}
+        </div>
       </main>
 
       <CreateFormModal

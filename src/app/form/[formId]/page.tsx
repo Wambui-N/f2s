@@ -50,7 +50,7 @@ export default async function FormPage({
       const response = await fetch(`/api/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: formId, formData: submissionData }),
+        body: JSON.stringify({ formId: formId, submissionData: submissionData }),
       });
 
       if (!response.ok) {

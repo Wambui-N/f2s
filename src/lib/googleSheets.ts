@@ -18,6 +18,18 @@ class GoogleSheetsService {
     refreshToken: string,
     expiresAt?: number
   ) {
+    console.log("Creating OAuth2 client with environment variables:", {
+      hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+      hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      clientIdLength: process.env.GOOGLE_CLIENT_ID?.length || 0,
+      clientSecretLength: process.env.GOOGLE_CLIENT_SECRET?.length || 0
+    });
+
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      throw new Error("Google API credentials not configured. Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
+    }
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -99,10 +111,33 @@ class GoogleSheetsService {
     refreshToken: string,
   ): Promise<SheetConnection | null> {
     try {
+      console.log("GoogleSheetsService.createSheet called with:", {
+        userId,
+        sheetName,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+        accessTokenLength: accessToken?.length || 0,
+        refreshTokenLength: refreshToken?.length || 0
+      });
+
       const authClient = await this.getAuthClient(accessToken, refreshToken);
+      console.log("Auth client created successfully");
+      
       const sheets = google.sheets({ version: "v4", auth: authClient });
+      console.log("Sheets API client created");
+
+      // Test the auth client first
+      try {
+        console.log("Testing auth client with a simple API call...");
+        const testResponse = await sheets.spreadsheets.list({ pageSize: 1 });
+        console.log("Auth test successful, found", testResponse.data.spreadsheets?.length || 0, "existing spreadsheets");
+      } catch (authTestError) {
+        console.error("Auth test failed:", authTestError);
+        throw new Error(`Authentication test failed: ${authTestError.message}`);
+      }
 
       // Create a new spreadsheet
+      console.log("Creating spreadsheet with name:", sheetName);
       const response = await sheets.spreadsheets.create({
         requestBody: {
           properties: {
@@ -122,8 +157,10 @@ class GoogleSheetsService {
         },
       });
 
+      console.log("Spreadsheet created successfully:", response.data);
       const sheetId = response.data.spreadsheetId!;
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+      console.log("Sheet ID:", sheetId, "URL:", sheetUrl);
 
       // Store the connection in our database and return the new record
       const { data, error } = await supabase
@@ -157,9 +194,27 @@ class GoogleSheetsService {
         throw error;
       }
 
+      console.log("Sheet connection stored in database:", data);
       return data as SheetConnection;
     } catch (error) {
       console.error("Failed to create or link Google Sheet:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        status: error.status,
+        response: error.response?.data
+      });
+      
+      // Check if it's a Google API error
+      if (error.response?.data) {
+        console.error("Google API Error Response:", error.response.data);
+      }
+      
+      // Check if it's an authentication error
+      if (error.message?.includes('invalid_grant') || error.message?.includes('unauthorized')) {
+        console.error("Authentication error - tokens may be invalid or expired");
+      }
+      
       return null;
     }
   }

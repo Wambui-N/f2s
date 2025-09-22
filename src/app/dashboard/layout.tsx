@@ -102,17 +102,17 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ProtectedRoute>
-      <div className="flex min-h-screen w-full bg-gray-50/50">
+      <div className="flex min-h-screen w-full bg-gradient-to-b from-[#fff8e8] to-white">
         {/* Enhanced Sidebar */}
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-72 flex-col border-r bg-white shadow-lg sm:flex">
+        <aside className="fixed inset-y-0 left-0 z-10 hidden w-72 flex-col border-r bg-white/90 backdrop-blur-sm shadow-xl sm:flex">
           <div className="flex h-full max-h-screen flex-col">
             {/* Logo Section */}
-            <div className="flex h-16 items-center border-b px-6 bg-gradient-to-r from-blue-50 to-purple-50">
+            <div className="flex h-16 items-center border-b px-6 bg-gradient-to-r from-[#2c5e2a]/5 to-[#f95716]/5">
               <Link href="/" className="flex items-center gap-3 font-semibold group">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#2c5e2a] to-[#234b21] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Sparkles className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="text-lg font-bold text-[#2c5e2a]">
                   ShelfCue
                 </span>
               </Link>
@@ -132,7 +132,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                       window.dispatchEvent(event);
                     }, 100);
                   }}
-                  className="w-full justify-start bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+                  className="w-full justify-start bg-[#2c5e2a] hover:bg-[#234b21] text-white shadow-lg rounded-2xl"
                   size="sm"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -149,9 +149,9 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all hover:bg-blue-50 hover:text-blue-700 ${
+                    className={`group flex items-center gap-3 rounded-2xl px-4 py-3 transition-all hover:bg-[#2c5e2a]/10 hover:text-[#2c5e2a] ${
                       pathname === item.href
-                        ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border border-blue-200 shadow-sm"
+                        ? "bg-[#2c5e2a]/10 text-[#2c5e2a] border border-[#2c5e2a]/20 shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >

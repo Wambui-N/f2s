@@ -560,9 +560,9 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-gradient-to-b from-[#fff8e8] to-white">
       {/* Enhanced Navigation Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-lg">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -570,7 +570,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                 variant="ghost" 
                 size="sm" 
                 onClick={onBack} 
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-[#2c5e2a]/10 rounded-2xl"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
@@ -578,7 +578,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               <InlineEditableTitle
                 title={formData.title}
                 onSave={updateFormTitle}
-                className="text-xl font-semibold"
+                className="text-2xl font-bold text-[#2c5e2a]"
               />
               
               {/* Save Status Indicator */}
@@ -651,7 +651,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPublishFlow(true)}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 rounded-2xl border-[#2c5e2a]/20 hover:bg-[#2c5e2a]/10 hover:text-[#2c5e2a]"
                 >
                   <Share2 className="w-4 h-4" />
                   <span>Share</span>
@@ -660,7 +660,7 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
               
               <Button
                 onClick={() => setShowPublishFlow(true)}
-                className="flex items-center space-x-2 btn-primary"
+                className="flex items-center space-x-2 bg-[#2c5e2a] hover:bg-[#234b21] text-white rounded-2xl"
               >
                 <Send className="w-4 h-4" />
                 <span>{formData.status === "published" ? "Published" : "Publish"}</span>
@@ -712,14 +712,14 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
                 />
 
                 {/* Enhanced Builder View */}
-                <Card className="shadow-lg">
+                <Card className="shadow-xl rounded-3xl border-0 bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold flex items-center">
-                        <Activity className="w-5 h-5 mr-2" />
+                      <h3 className="text-xl font-bold text-[#2c5e2a] flex items-center">
+                        <Activity className="w-6 h-6 mr-2" />
                         Form Fields
                       </h3>
-                      <Badge variant="secondary" className="px-3 py-1">
+                      <Badge variant="secondary" className="px-4 py-2 rounded-full bg-[#2c5e2a]/10 text-[#2c5e2a] border-0">
                         {formData.fields.length} fields
                       </Badge>
                     </div>

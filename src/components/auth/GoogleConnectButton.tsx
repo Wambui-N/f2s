@@ -29,8 +29,8 @@ export function GoogleConnectButton({
             prompt: "consent",
           },
           redirectTo: typeof window !== 'undefined' 
-            ? `${window.location.origin}/dashboard/settings`
-            : 'https://shelfcue.com/dashboard/settings',
+            ? `${window.location.origin}/auth/callback?from=settings`
+            : 'https://shelfcue.com/auth/callback?from=settings',
         },
       });
 

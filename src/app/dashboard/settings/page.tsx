@@ -591,6 +591,7 @@ function SettingsContent() {
               </div>
             </CardContent>
           </Card>
+
         </div>
       </div>
     </main>

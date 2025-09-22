@@ -51,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     const redirectUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/dashboard`
-      : 'https://shelfcue.com/dashboard';
+      ? `${window.location.origin}/auth/callback`
+      : 'https://shelfcue.com/auth/callback';
       
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           access_type: "offline",
           prompt: "consent",
         },
+        skipBrowserRedirect: false,
       },
     });
     if (error) {
@@ -74,8 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const reconnectWithGoogle = async () => {
     const redirectUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/dashboard/settings`
-      : 'https://shelfcue.com/dashboard/settings';
+      ? `${window.location.origin}/auth/callback`
+      : 'https://shelfcue.com/auth/callback';
       
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           access_type: "offline",
           prompt: "consent", // Force prompt to get a new refresh_token
         },
+        skipBrowserRedirect: false,
       },
     });
     if (error) {

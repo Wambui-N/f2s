@@ -41,6 +41,36 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
   const { user } = useAuth();
   const router = useRouter();
 
+  const testGoogleAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError("You must be signed in to test Google authentication.");
+        return;
+      }
+
+      const response = await fetch("/api/test-google-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      const result = await response.json();
+      console.log("Google auth test result:", result);
+      
+      if (result.success) {
+        setError(`Google authentication working! Check console for details.`);
+      } else {
+        setError(`Google auth test failed: ${result.details || result.error}`);
+      }
+    } catch (err: any) {
+      setError(`Test error: ${err.message}`);
+    }
+  };
+
+
   const handleCreate = async () => {
     if (!formName.trim() || !user) {
       setError("Form name is required.");
@@ -51,11 +81,8 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     setError(null);
     setStep("creating");
 
-    // Add a small delay to ensure tokens are stored
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     try {
-      // Check for Google Sheets permissions
+      // Check for Google Sheets permissions first
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setError("You must be signed in to create forms.");
@@ -65,20 +92,25 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
       }
 
       // Get Google tokens from database
-      const { data: tokens, error: tokensError } = await supabase
+      const { data: allUserTokens, error: tokensError } = await supabase
         .from("user_google_tokens")
         .select("access_token, refresh_token")
         .eq("user_id", user.id)
-        .single();
+        .order("created_at", { ascending: false });
 
-      if (tokensError || !tokens) {
+      if (tokensError || !allUserTokens || allUserTokens.length === 0) {
         setError("Google Sheets permissions are required. Please connect your account in settings.");
         setStep("details");
         setIsCreating(false);
         return;
       }
 
-      // Create the Google Sheet
+      // Get the most recent token
+      const tokens = allUserTokens[0];
+
+      console.log("Creating Google Sheet...");
+      
+      // Create the Google Sheet with better error handling
       const sheetResponse = await fetch("/api/sheets/create", {
         method: "POST",
         headers: {
@@ -92,14 +124,29 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         }),
       });
 
+      console.log("Sheet response status:", sheetResponse.status);
+      
+      if (!sheetResponse.ok) {
+        const errorText = await sheetResponse.text();
+        console.error("Sheet creation failed:", errorText);
+        
+        // Try to parse error for better user feedback
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || `HTTP ${sheetResponse.status}: ${errorText}`);
+        } catch {
+          throw new Error(`Failed to create Google Sheet (${sheetResponse.status}). Please check your Google Sheets permissions.`);
+        }
+      }
+
       const sheetResult = await sheetResponse.json();
+      console.log("Sheet created successfully:", sheetResult);
+
       if (!sheetResult.success) {
         throw new Error(sheetResult.error || "Failed to create Google Sheet.");
       }
 
-      const newConnectionId = sheetResult.connection.id;
-
-      // Create the form
+      // Create the form with Google Sheets integration
       useFormStore.getState().resetForm();
       const newFormData = useFormStore.getState().formData;
       newFormData.title = formName;
@@ -113,7 +160,8 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
           description: formDescription,
           form_data: newFormData,
           status: "draft",
-          default_sheet_connection_id: newConnectionId,
+          google_sheet_id: sheetResult.sheetId,
+          google_sheet_url: sheetResult.sheetUrl,
         })
         .select("id")
         .single();
@@ -122,6 +170,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         throw new Error(formError?.message || "Failed to create the form.");
       }
 
+      console.log("Form created successfully:", form);
       setStep("success");
       
       // Redirect after a brief success display
@@ -131,8 +180,10 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
       }, 1500);
 
     } catch (e: any) {
-      setError(e.message);
+      console.error("Create form error:", e);
+      setError(e.message || "Failed to create form");
       setStep("details");
+    } finally {
       setIsCreating(false);
     }
   };
@@ -152,17 +203,17 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px] rounded-3xl border-0 bg-white/80 backdrop-blur-sm shadow-2xl">
         {step === "details" && (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center text-xl">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <DialogTitle className="flex items-center text-2xl font-bold text-[#2c5e2a]">
+                <div className="w-9 h-9 bg-gradient-to-br from-[#2c5e2a] to-[#234b21] rounded-2xl flex items-center justify-center mr-3">
                   <Plus className="w-4 h-4 text-white" />
                 </div>
                 Create New Form
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-gray-600">
                 Create a beautiful form with automatic Google Sheets integration. 
                 Your form will be ready to collect submissions in minutes.
               </DialogDescription>
@@ -178,7 +229,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Client Intake Form, Consultation Booking"
-                  className="text-base"
+                  className="text-base rounded-2xl"
                 />
               </div>
               
@@ -192,24 +243,25 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Briefly describe what this form is for..."
                   rows={3}
+                  className="rounded-2xl"
                 />
               </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-                <h4 className="font-semibold text-blue-900 flex items-center">
+              <div className="bg-[#2c5e2a]/5 border border-[#2c5e2a]/20 rounded-2xl p-4 space-y-3">
+                <h4 className="font-semibold text-[#2c5e2a] flex items-center">
                   <Sparkles className="w-4 h-4 mr-2" />
                   What will be created:
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <p className="flex items-start text-blue-800">
+                  <p className="flex items-start text-[#2c5e2a]">
                     <FileText className="h-4 w-4 mr-2 mt-0.5 shrink-0" />
                     A new form named <span className="font-semibold mx-1">"{formName || "..."}"</span>
                   </p>
-                  <p className="flex items-start text-blue-800">
+                  <p className="flex items-start text-[#2c5e2a]">
                     <Share2 className="h-4 w-4 mr-2 mt-0.5 shrink-0" />
                     A Google Sheet named <span className="font-semibold mx-1">"{formName || "..."} - Submissions"</span>
                   </p>
-                  <p className="flex items-start text-blue-800">
+                  <p className="flex items-start text-[#2c5e2a]">
                     <Zap className="h-4 w-4 mr-2 mt-0.5 shrink-0" />
                     Automatic real-time sync between form and sheet
                   </p>
@@ -217,7 +269,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
               </div>
               
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start">
                   <AlertTriangle className="h-5 w-5 mr-3 mt-0.5 text-red-600 shrink-0" />
                   <div className="flex-1">
                     <p className="font-semibold text-red-900">Error</p>
@@ -230,7 +282,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                           handleClose();
                           router.push("/dashboard/settings");
                         }}
-                        className="w-full justify-center text-sm"
+                        className="w-full justify-center text-sm rounded-xl"
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Connect Google Account
@@ -241,27 +293,36 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
               )}
             </div>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
+            <DialogFooter className="flex-col gap-2">
               <Button 
-                onClick={handleCreate} 
-                disabled={!formName.trim() || isCreating}
-                className="btn-primary"
+                onClick={testGoogleAuth} 
+                variant="outline"
+                className="rounded-xl w-full"
               >
-                {isCreating ? (
-                  <>
-                    <LoadingSpinner size="sm" />
-                    <span className="ml-2">Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Create Form & Sheet
-                  </>
-                )}
+                Test Google Authentication
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleClose} className="rounded-xl">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreate} 
+                  disabled={!formName.trim() || isCreating}
+                  className="bg-[#2c5e2a] hover:bg-[#234b21] text-white rounded-2xl"
+                >
+                  {isCreating ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span className="ml-2">Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Create Form & Sheet
+                    </>
+                  )}
+                </Button>
+              </div>
             </DialogFooter>
           </>
         )}
@@ -269,7 +330,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         {step === "creating" && (
           <div className="py-12">
             <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#2c5e2a] to-[#234b21] rounded-2xl flex items-center justify-center mx-auto">
                 <Sparkles className="w-8 h-8 text-white animate-pulse" />
               </div>
               <div>
@@ -286,14 +347,17 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         {step === "success" && (
           <div className="py-12">
             <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 bg-[#2c5e2a] rounded-2xl flex items-center justify-center mx-auto">
                 <CheckCircle className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-green-800 mb-2">
+                <h3 className="text-xl font-bold text-[#2c5e2a] mb-2">
                   Form Created Successfully!
                 </h3>
-                <p className="text-green-600">
+                <p className="text-[#2c5e2a] mb-2">
+                  Your form and Google Sheet have been created. Submissions will automatically sync to your sheet.
+                </p>
+                <p className="text-sm text-gray-600">
                   Redirecting to the form builder...
                 </p>
               </div>

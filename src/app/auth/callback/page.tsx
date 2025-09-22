@@ -25,11 +25,17 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
+          console.log("Session data:", data.session);
+          console.log("Provider token:", data.session.provider_token);
+          console.log("Provider refresh token:", data.session.provider_refresh_token);
+          
           // Store the provider tokens
           const providerToken = data.session.provider_token;
           const providerRefreshToken = data.session.provider_refresh_token;
 
           if (providerToken && providerRefreshToken) {
+            console.log("Storing tokens for user:", data.session.user.id);
+            
             // Store tokens securely in your database
             const { error: tokenError } = await supabase
               .from("user_google_tokens")
@@ -47,9 +53,16 @@ export default function AuthCallback() {
             if (tokenError) {
               console.error("Error storing tokens:", tokenError);
               setStatus("error");
-              setMessage("Failed to store authentication tokens");
+              setMessage(`Failed to store authentication tokens: ${tokenError.message}`);
               return;
+            } else {
+              console.log("Tokens stored successfully");
             }
+          } else {
+            console.error("Missing provider tokens in session");
+            setStatus("error");
+            setMessage("Google authentication tokens not received. Please try reconnecting.");
+            return;
           }
 
           setStatus("success");
@@ -61,7 +74,11 @@ export default function AuthCallback() {
             if (typeof window !== 'undefined') {
               localStorage.setItem('auth_success', 'true');
             }
-            router.push("/dashboard");
+            // Check if we came from settings page
+            const fromSettings = typeof window !== 'undefined' && 
+              (window.location.search.includes('from=settings') || 
+               document.referrer.includes('/dashboard/settings'));
+            router.push(fromSettings ? "/dashboard/settings" : "/dashboard");
           }, 2000);
         } else {
           setStatus("error");
@@ -79,7 +96,7 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+      <div className=" w-full bg-white rounded-lg shadow-md p-8 text-center">
         {status === "loading" && (
           <>
             <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
