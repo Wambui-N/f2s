@@ -542,19 +542,19 @@ export function DriveFileHandlingPanel({ formId, formTitle, formData }: DriveFil
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">File Variables</h4>
                 <div className="space-y-1">
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{{original_filename}}</code>
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{{original_basename}}</code>
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{{file_extension}}</code>
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{{timestamp}}</code>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{"{{original_filename}}"}</code>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{"{{original_basename}}"}</code>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{"{{file_extension}}"}</code>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{"{{timestamp}}"}</code>
                 </div>
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Form Variables</h4>
                 <div className="space-y-1">
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{{form_title}}</code>
+                  <code className="text-sm bg-gray-100 px-2 py-1 rounded block">{"{{form_title}}"}</code>
                   {textFields.slice(0, 4).map((field) => (
                     <code key={field.id} className="text-sm bg-gray-100 px-2 py-1 rounded block">
-                      {`{{${field.name}}}`}
+                      {`{{${field.columnName}}}`}
                     </code>
                   ))}
                 </div>
@@ -568,7 +568,7 @@ export function DriveFileHandlingPanel({ formId, formTitle, formData }: DriveFil
                   <div>
                     <p className="text-sm font-medium text-orange-900">Example Folder Structure</p>
                     <p className="text-xs text-orange-700 mt-1">
-                      Template: <code>/Clients/{{name}}/{{company}}</code><br/>
+                      Template: <code>{"/Clients/{{name}}/{{company}}"}</code><br/>
                       Result: <code>/Clients/John_Smith/Acme_Corp</code>
                     </p>
                   </div>
@@ -581,7 +581,7 @@ export function DriveFileHandlingPanel({ formId, formTitle, formData }: DriveFil
                   <div>
                     <p className="text-sm font-medium text-blue-900">Example File Naming</p>
                     <p className="text-xs text-blue-700 mt-1">
-                      Template: <code>{{name}}_{{timestamp}}_{{original_filename}}</code><br/>
+                      Template: <code>{"{{name}}_{{timestamp}}_{{original_filename}}"}</code><br/>
                       Result: <code>John_Smith_2024-03-15_14-30-25_contract.pdf</code>
                     </p>
                   </div>
@@ -615,7 +615,7 @@ export function DriveFileHandlingPanel({ formId, formTitle, formData }: DriveFil
                 <div className="flex items-center space-x-2 text-green-700 bg-green-50 p-3 rounded border border-green-200">
                   <CheckCircle className="w-4 h-4" />
                   <p className="text-sm">
-                    Found {fileFields.length} file upload field{fileFields.length > 1 ? 's' : ''}: {fileFields.map(f => f.label || f.name).join(', ')}
+                    Found {fileFields.length} file upload field{fileFields.length > 1 ? 's' : ''}: {fileFields.map(f => f.label || f.columnName).join(', ')}
                   </p>
                 </div>
               )}
@@ -675,6 +675,7 @@ export function DriveFileHandlingPanel({ formId, formTitle, formData }: DriveFil
     </div>
   );
 }
+
 
 
 

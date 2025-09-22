@@ -33,7 +33,7 @@ function AnalyticsContent() {
     formsThisMonth: 0,
     viewsThisMonth: 0,
     submissionsThisMonth: 0,
-    formAnalytics: []
+    formAnalytics: [] as any[]
   });
 
   useEffect(() => {

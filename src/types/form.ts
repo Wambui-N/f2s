@@ -8,6 +8,8 @@ export type FieldTypes =
   | "checkbox"
   | "radio"
   | "date"
+  | "datetime-local"
+  | "time"
   | "file"
   | "hidden"
   | "url"
@@ -25,6 +27,7 @@ export interface FormField {
   label: string;
   placeholder?: string;
   columnName: string;
+  name?: string; // For backward compatibility
   defaultValue?: string | string[] | boolean | number;
   options?: string[];
   validation?: {

@@ -181,8 +181,7 @@ export const Pricing = () => {
                 }`}
                 style={{ 
                   backgroundColor: plan.color,
-                  borderColor: plan.borderColor,
-                  ringColor: plan.popular ? "#f95716" : "transparent"
+                  borderColor: plan.borderColor
                 }}
               >
                 {/* Plan Header */}

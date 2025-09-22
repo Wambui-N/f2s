@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,7 +58,8 @@ import {
   Sparkles,
   Zap,
   Activity,
-  BarChart3
+  BarChart3,
+  CheckCircle
 } from "lucide-react";
 import { useFormStore } from "@/store/formStore";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
@@ -220,11 +221,11 @@ export function FormBuilder({ onBack }: { onBack: () => void }) {
       onDrop: ({ source }) => {
         const startIndex = source.data.index as number;
         if (startIndex === undefined) return;
-        const closest = Array.from(el.querySelectorAll('[data-field-id]')).find(
-          (el) => el.getBoundingClientRect().top > source.location.current.input.clientY
+        const closest = Array.from((el as HTMLElement).querySelectorAll('[data-field-id]')).find(
+          (el) => (el as HTMLElement).getBoundingClientRect().top > (source as any).location.current.input.clientY
         );
         const finishIndex = closest
-          ? Array.from(el.querySelectorAll('[data-field-id]')).indexOf(closest)
+          ? Array.from((el as HTMLElement).querySelectorAll('[data-field-id]')).indexOf(closest)
           : formData.fields.length;
 
         moveField(startIndex, finishIndex);

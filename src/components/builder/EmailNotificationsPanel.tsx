@@ -263,7 +263,7 @@ export function EmailNotificationsPanel({ formId, formTitle, formData }: EmailNo
                   onChange={(e) => setSettings(prev => ({ ...prev, subjectTemplate: e.target.value }))}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Use variables like {{name}} or {{email}} to personalize the subject
+                  Use variables like {"{{name}}"} or {"{{email}}"} to personalize the subject
                 </p>
               </div>
 
@@ -327,7 +327,7 @@ export function EmailNotificationsPanel({ formId, formTitle, formData }: EmailNo
               <div className="flex items-start space-x-2">
                 <Info className="w-4 h-4 text-blue-600 mt-0.5" />
                 <p className="text-sm text-blue-800">
-                  You can use any field name from your form as a variable. For example, if you have a "company" field, use {{company}}.
+                  You can use any field name from your form as a variable. For example, if you have a "company" field, use {"{{company}}"}.
                 </p>
               </div>
             </div>

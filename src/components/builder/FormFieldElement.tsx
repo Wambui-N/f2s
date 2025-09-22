@@ -20,7 +20,9 @@ import {
   Eye,
   EyeOff,
   Settings,
-  Sparkles
+  Sparkles,
+  Image as ImageIcon,
+  Upload
 } from "lucide-react";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";

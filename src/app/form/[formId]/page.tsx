@@ -7,12 +7,12 @@ import { supabase } from "@/lib/supabase";
 import { FormData } from "@/types/form";
 import { trackFormViewAuto } from "@/lib/analytics";
 
-export default function FormPage({
+export default async function FormPage({
   params,
 }: {
-  params: { formId: string };
+  params: Promise<{ formId: string }>;
 }) {
-  const { formId } = params;
+  const { formId } = await params;
   const [formData, setFormData] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

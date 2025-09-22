@@ -303,7 +303,7 @@ export function CalendarEventsPanel({ formId, formTitle, formData }: CalendarEve
                       </SelectTrigger>
                       <SelectContent>
                         {dateTimeFields.map((field) => (
-                          <SelectItem key={field.id} value={field.name}>
+                          <SelectItem key={field.id} value={field.columnName}>
                             {field.label} ({field.type})
                           </SelectItem>
                         ))}
@@ -320,7 +320,7 @@ export function CalendarEventsPanel({ formId, formTitle, formData }: CalendarEve
                       <SelectContent>
                         <SelectItem value="">No time field</SelectItem>
                         {dateTimeFields.filter(f => f.type === 'time').map((field) => (
-                          <SelectItem key={field.id} value={field.name}>
+                          <SelectItem key={field.id} value={field.columnName}>
                             {field.label} ({field.type})
                           </SelectItem>
                         ))}
@@ -413,8 +413,8 @@ export function CalendarEventsPanel({ formId, formTitle, formData }: CalendarEve
                         <SelectValue placeholder="Select email field" />
                       </SelectTrigger>
                       <SelectContent>
-                        {textFields.filter(f => f.type === 'email' || f.name.toLowerCase().includes('email')).map((field) => (
-                          <SelectItem key={field.id} value={field.name}>
+                        {textFields.filter(f => f.type === 'email' || f.columnName.toLowerCase().includes('email')).map((field) => (
+                          <SelectItem key={field.id} value={field.columnName}>
                             {field.label} ({field.type})
                           </SelectItem>
                         ))}
@@ -454,14 +454,14 @@ export function CalendarEventsPanel({ formId, formTitle, formData }: CalendarEve
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Form Variables</h4>
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded">{{form_title}}</code>
+                <code className="text-sm bg-gray-100 px-2 py-1 rounded">{"{{form_title}}"}</code>
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Field Variables</h4>
                 <div className="flex flex-wrap gap-1">
                   {availableFields.slice(0, 6).map((field) => (
                     <code key={field.id} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {`{{${field.name}}}`}
+                      {`{{${field.columnName}}}`}
                     </code>
                   ))}
                 </div>
