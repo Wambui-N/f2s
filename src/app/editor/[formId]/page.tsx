@@ -3,7 +3,7 @@
 import { FormBuilder } from "@/components/builder/FormBuilder";
 import { useFormStore } from "@/store/formStore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { supabase } from "@/lib/supabase";
 import { FormData } from "@/components/builder/types";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -17,16 +17,8 @@ function EditFormContent({ params }: EditFormPageProps) {
   const router = useRouter();
   const loadForm = useFormStore((state) => state.loadForm);
   const [loading, setLoading] = useState(true);
-  const [formId, setFormId] = useState<string | null>(null);
   const { user } = useAuth();
-
-  useEffect(() => {
-    const getParams = async () => {
-      const resolvedParams = await params;
-      setFormId(resolvedParams.formId);
-    };
-    getParams();
-  }, [params]);
+  const { formId } = use(params);
 
   useEffect(() => {
     if (!formId || !user) return;
@@ -35,7 +27,19 @@ function EditFormContent({ params }: EditFormPageProps) {
       setLoading(true);
       const { data, error } = await supabase
         .from("forms")
-        .select("form_data, user_id")
+        .select(`
+          id,
+          title,
+          description,
+          fields,
+          user_id,
+          status,
+          default_sheet_connection_id,
+          sheet_connections!forms_default_sheet_connection_id_fkey (
+            sheet_id,
+            sheet_url
+          )
+        `)
         .eq("id", formId)
         .single();
 
@@ -50,14 +54,25 @@ function EditFormContent({ params }: EditFormPageProps) {
           return;
         }
 
-        if (data.form_data) {
-          // Ensure the form data has the correct database ID
-          const formDataWithId = {
-            ...data.form_data,
-            id: formId, // Use the actual database ID, not the generated one
-          };
-          loadForm(formDataWithId as FormData);
-        }
+        // Ensure fields have stable unique ids to avoid React key warnings
+        const normalizedFields = Array.isArray(data.fields)
+          ? data.fields.map((f: any, idx: number) => ({
+              ...f,
+              id: f?.id && typeof f.id === "string" ? f.id : `field_${Date.now()}_${idx}`,
+            }))
+          : [];
+
+        // Load form data with proper structure
+        loadForm({
+          id: formId,
+          title: data.title || "",
+          description: data.description || "",
+          status: data.status || "draft",
+          fields: normalizedFields,
+          theme: useFormStore.getState().formData.theme,
+          settings: useFormStore.getState().formData.settings,
+          lastSaved: new Date(),
+        } as FormData);
       }
       setLoading(false);
     };
@@ -65,7 +80,7 @@ function EditFormContent({ params }: EditFormPageProps) {
     fetchForm();
   }, [formId, user, loadForm, router]);
 
-  if (loading || !formId) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading form editor...</p>

@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { supabase } from "./supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   SheetConnection,
   SubmissionData,
@@ -10,9 +10,21 @@ import type {
 const SCOPES = [
   "https://www.googleapis.com/auth/spreadsheets",
   "https://www.googleapis.com/auth/drive.file",
+  "https://www.googleapis.com/auth/drive.readonly",
 ];
 
 class GoogleSheetsService {
+  private supabase: SupabaseClient;
+
+  constructor(supabaseClient: SupabaseClient) {
+    this.supabase = supabaseClient;
+  }
+
+  async getSheets(accessToken: string, refreshToken: string) {
+    const authClient = await this.getAuthClient(accessToken, refreshToken);
+    return google.sheets({ version: "v4", auth: authClient });
+  }
+
   private async getAuthClient(
     accessToken: string,
     refreshToken: string,
@@ -60,7 +72,7 @@ class GoogleSheetsService {
         console.error("Failed to refresh access token:", error);
         // This is a critical error, the refresh token might be invalid.
         // We'll mark the connection as inactive.
-        await supabase
+        await this.supabase
           .from("sheet_connections")
           .update({ is_active: false })
           .eq("refresh_token", refreshToken);
@@ -91,7 +103,7 @@ class GoogleSheetsService {
     expiresAt?: number | null
   ) {
     try {
-      await supabase
+      await this.supabase
         .from("sheet_connections")
         .update({
           access_token: newAccessToken,
@@ -109,6 +121,7 @@ class GoogleSheetsService {
     sheetName: string,
     accessToken: string,
     refreshToken: string,
+    headers?: string[]  // Add optional headers parameter
   ): Promise<SheetConnection | null> {
     try {
       console.log("GoogleSheetsService.createSheet called with:", {
@@ -129,11 +142,21 @@ class GoogleSheetsService {
       // Test the auth client first
       try {
         console.log("Testing auth client with a simple API call...");
-        const testResponse = await sheets.spreadsheets.list({ pageSize: 1 });
-        console.log("Auth test successful, found", testResponse.data.spreadsheets?.length || 0, "existing spreadsheets");
+        const drive = google.drive({ version: "v3", auth: authClient });
+        const testResponse = await drive.files.list({
+          pageSize: 1,
+          q: "mimeType='application/vnd.google-apps.spreadsheet'",
+        });
+        console.log(
+          "Auth test successful, found",
+          testResponse.data.files?.length || 0,
+          "existing spreadsheets",
+        );
       } catch (authTestError) {
         console.error("Auth test failed:", authTestError);
-        throw new Error(`Authentication test failed: ${authTestError.message}`);
+        throw new Error(
+          `Authentication test failed: ${authTestError.message}`,
+        );
       }
 
       // Create a new spreadsheet
@@ -149,7 +172,7 @@ class GoogleSheetsService {
                 title: "Form Submissions",
                 gridProperties: {
                   rowCount: 1000,
-                  columnCount: 26, // A-Z columns
+                  columnCount: headers?.length || 26, // Use headers length or default to A-Z
                 },
               },
             },
@@ -162,8 +185,21 @@ class GoogleSheetsService {
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
       console.log("Sheet ID:", sheetId, "URL:", sheetUrl);
 
+      // If headers were provided, set them in the first row
+      if (headers?.length) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: "Form Submissions!A1",
+          valueInputOption: "RAW",
+          requestBody: {
+            values: [headers]
+          }
+        });
+        console.log("Headers set successfully:", headers);
+      }
+
       // Store the connection in our database and return the new record
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from("sheet_connections")
         .insert({
           user_id: userId,
@@ -177,11 +213,12 @@ class GoogleSheetsService {
         .single();
 
       if (error) {
+        console.error("Supabase insert error in sheet_connections:", error);
         // If a duplicate exists, try to fetch it instead
         if (error.code === "23505") {
           // Unique violation
           console.warn("Sheet connection already exists, fetching it instead.");
-          const { data: existingData, error: existingError } = await supabase
+          const { data: existingData, error: existingError } = await this.supabase
             .from("sheet_connections")
             .select("*")
             .eq("user_id", userId)
@@ -246,7 +283,7 @@ class GoogleSheetsService {
       const sheetName = response.data.properties?.title || "Unknown Sheet";
 
       // Store the connection
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from("sheet_connections")
         .insert({
           user_id: userId,
@@ -327,7 +364,7 @@ class GoogleSheetsService {
       });
 
       // Update last synced timestamp
-      await supabase
+      await this.supabase
         .from("sheet_connections")
         .update({ last_synced: new Date().toISOString() })
         .eq("id", sheetConnection.id);
@@ -443,7 +480,7 @@ class GoogleSheetsService {
 
   async getUserSheetConnections(userId: string): Promise<SheetConnection[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from("sheet_connections")
         .select("*")
         .eq("user_id", userId)
@@ -462,7 +499,7 @@ class GoogleSheetsService {
     userId: string,
   ): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { error } = await this.supabase
         .from("sheet_connections")
         .delete()
         .eq("id", connectionId)
@@ -476,4 +513,4 @@ class GoogleSheetsService {
   }
 }
 
-export const googleSheetsService = new GoogleSheetsService();
+export { GoogleSheetsService };

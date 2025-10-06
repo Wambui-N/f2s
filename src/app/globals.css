@@ -229,6 +229,26 @@
   p {
     line-height: 1.6;
   }
+
+  /* Prevent awkward vertical text wrapping for narrow containers */
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .min-w-0 {
+    min-width: 0; /* allow flex/grid children to shrink text correctly */
+  }
+  .max-w-prose {
+    max-width: 65ch;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
   
   /* Focus States */
   .focus-ring {

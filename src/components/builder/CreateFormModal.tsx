@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,10 @@ import {
   Sparkles,
   Zap,
   CheckCircle,
-  Settings
+  Settings,
+  Wand2,
+  Copy,
+  ArrowRight
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -32,44 +35,49 @@ interface CreateFormModalProps {
   onClose: () => void;
 }
 
+interface FormRecord {
+  id: string;
+  title: string;
+  description?: string;
+  created_at: string;
+  status: "draft" | "published";
+}
+
 export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
+  const [step, setStep] = useState<"options" | "wizard" | "details" | "creating" | "success">("options");
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<"details" | "creating" | "success">("details");
+  const [existingForms, setExistingForms] = useState<FormRecord[]>([]);
+  const [selectedFormToDuplicate, setSelectedFormToDuplicate] = useState<string>("");
   const { user } = useAuth();
   const router = useRouter();
 
-  const testGoogleAuth = async () => {
+  // Fetch existing forms for duplication option
+  useEffect(() => {
+    if (isOpen && step === "options") {
+      fetchExistingForms();
+    }
+  }, [isOpen, step]);
+
+  const fetchExistingForms = async () => {
+    if (!user) return;
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError("You must be signed in to test Google authentication.");
-        return;
-      }
+      const { data, error } = await supabase
+        .from("forms")
+        .select("id, title, description, created_at, status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
-      const response = await fetch("/api/test-google-auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      const result = await response.json();
-      console.log("Google auth test result:", result);
-      
-      if (result.success) {
-        setError(`Google authentication working! Check console for details.`);
-      } else {
-        setError(`Google auth test failed: ${result.details || result.error}`);
+      if (!error) {
+        setExistingForms(data || []);
       }
-    } catch (err: any) {
-      setError(`Test error: ${err.message}`);
+    } catch (err) {
+      console.error("Error fetching forms:", err);
     }
   };
-
 
   const handleCreate = async () => {
     if (!formName.trim() || !user) {
@@ -108,80 +116,119 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
       // Get the most recent token
       const tokens = allUserTokens[0];
 
-      console.log("Creating Google Sheet...");
-      
-      // Create the Google Sheet with better error handling
-      const sheetResponse = await fetch("/api/sheets/create", {
+      // Define initial form fields
+      const initialFields = [
+        { type: "text", label: "Name", required: true },
+        { type: "email", label: "Email", required: true }
+      ];
+
+      // Get current session token
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession?.access_token) {
+        throw new Error("No valid session found");
+      }
+
+      // Create form and sheet together using the new API
+      const response = await fetch("/api/forms/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          "Authorization": `Bearer ${currentSession.access_token}`
         },
         body: JSON.stringify({
-          sheetName: `${formName} - Submissions`,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
+          title: formName,
+          description: formDescription,
+          fields: initialFields,
+          googleTokens: {
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token
+          }
         }),
       });
 
-      console.log("Sheet response status:", sheetResponse.status);
+      const result = await response.json();
       
-      if (!sheetResponse.ok) {
-        const errorText = await sheetResponse.text();
-        console.error("Sheet creation failed:", errorText);
-        
-        // Try to parse error for better user feedback
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.error || `HTTP ${sheetResponse.status}: ${errorText}`);
-        } catch {
-          throw new Error(`Failed to create Google Sheet (${sheetResponse.status}). Please check your Google Sheets permissions.`);
-        }
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create form and sheet");
       }
 
-      const sheetResult = await sheetResponse.json();
-      console.log("Sheet created successfully:", sheetResult);
-
-      if (!sheetResult.success) {
-        throw new Error(sheetResult.error || "Failed to create Google Sheet.");
-      }
-
-      // Create the form with Google Sheets integration
-      useFormStore.getState().resetForm();
-      const newFormData = useFormStore.getState().formData;
-      newFormData.title = formName;
-      newFormData.description = formDescription;
-
-      const { data: form, error: formError } = await supabase
-        .from("forms")
-        .insert({
-          user_id: user.id,
-          title: formName,
-          description: formDescription,
-          form_data: newFormData,
-          status: "draft",
-          google_sheet_id: sheetResult.sheetId,
-          google_sheet_url: sheetResult.sheetUrl,
-        })
-        .select("id")
-        .single();
-
-      if (formError || !form) {
-        throw new Error(formError?.message || "Failed to create the form.");
-      }
-
-      console.log("Form created successfully:", form);
+      console.log("Form and sheet created successfully:", result);
       setStep("success");
       
       // Redirect after a brief success display
+      if (!result.form?.id) {
+        console.error("No form ID in response:", result);
+        throw new Error("Form created but ID not returned");
+      }
+
+      // Force a router refresh to update the forms list
+      router.refresh();
+      
+      // Redirect to the form editor
       setTimeout(() => {
-        router.push(`/editor/${form.id}`);
+        router.push(`/editor/${result.form.id}`);
         onClose();
       }, 1500);
 
     } catch (e: any) {
       console.error("Create form error:", e);
-      setError(e.message || "Failed to create form");
+      const message = e.message || "An unexpected error occurred.";
+      setError(message.includes("permissions") 
+        ? "Failed to create Google Sheet. Please check your account permissions in Settings." 
+        : `Failed to create form: ${message}`);
+      setStep("details");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!selectedFormToDuplicate || !user) {
+      setError("Please select a form to duplicate.");
+      return;
+    }
+
+    setIsCreating(true);
+    setError(null);
+    setStep("creating");
+
+    try {
+      // Get the form to duplicate
+      const { data: formToDuplicate, error: fetchError } = await supabase
+        .from("forms")
+        .select("*")
+        .eq("id", selectedFormToDuplicate)
+        .eq("user_id", user.id)
+        .single();
+
+      if (fetchError || !formToDuplicate) {
+        throw new Error("Failed to fetch form to duplicate");
+      }
+
+      // Create new form with duplicated data
+      const { data: newForm, error: createError } = await supabase
+        .from("forms")
+        .insert({
+          title: `${formToDuplicate.title} (Copy)`,
+          description: formToDuplicate.description,
+          fields: formToDuplicate.fields,
+          user_id: user.id,
+          status: "draft"
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        throw new Error("Failed to duplicate form");
+      }
+
+      // Redirect to the form editor
+      router.push(`/editor/${newForm.id}`);
+      onClose();
+
+    } catch (e: any) {
+      console.error("Duplicate form error:", e);
+      setError(`Failed to duplicate form: ${e.message}`);
       setStep("details");
     } finally {
       setIsCreating(false);
@@ -192,8 +239,9 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     setFormName("");
     setFormDescription("");
     setError(null);
-    setStep("details");
+    setStep("options");
     setIsCreating(false);
+    setSelectedFormToDuplicate("");
   };
 
   const handleClose = () => {
@@ -201,9 +249,165 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     onClose();
   };
 
+  const handleOptionSelect = (option: "wizard" | "scratch" | "duplicate") => {
+    if (option === "wizard") {
+      // For now, wizard goes to details step
+      // In the future, this could be a multi-step wizard
+      setStep("details");
+    } else if (option === "scratch") {
+      setStep("details");
+    } else if (option === "duplicate") {
+      setStep("duplicate");
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[560px] rounded-3xl border-0 bg-white/80 backdrop-blur-sm shadow-2xl">
+      <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 bg-white/95 backdrop-blur-sm shadow-2xl">
+        {step === "options" && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-2xl font-bold text-[#2c5e2a]">
+                <div className="w-9 h-9 bg-gradient-to-br from-[#2c5e2a] to-[#234b21] rounded-2xl flex items-center justify-center mr-3">
+                  <Plus className="w-4 h-4 text-white" />
+                </div>
+                Create New Form
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Choose how you'd like to create your form
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-6 space-y-4">
+              {/* Option 1: Use Wizard */}
+              <Button
+                onClick={() => handleOptionSelect("wizard")}
+                variant="outline"
+                className="w-full h-auto p-6 rounded-2xl border-2 hover:border-[#2c5e2a] hover:bg-[#2c5e2a]/5 transition-all group"
+              >
+                <div className="flex items-center gap-4 w-full">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#2c5e2a] to-[#234b21] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Wand2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold text-lg text-gray-900">Use Wizard</h3>
+                    <p className="text-sm text-gray-600">Quick setup with guided questions</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#2c5e2a] transition-colors" />
+                </div>
+              </Button>
+
+              {/* Option 2: Start from Scratch */}
+              <Button
+                onClick={() => handleOptionSelect("scratch")}
+                variant="outline"
+                className="w-full h-auto p-6 rounded-2xl border-2 hover:border-[#2c5e2a] hover:bg-[#2c5e2a]/5 transition-all group"
+              >
+                <div className="flex items-center gap-4 w-full">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold text-lg text-gray-900">Start from Scratch</h3>
+                    <p className="text-sm text-gray-600">Build your form from the ground up</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#2c5e2a] transition-colors" />
+                </div>
+              </Button>
+
+              {/* Option 3: Duplicate Existing Form */}
+              {existingForms.length > 0 && (
+                <Button
+                  onClick={() => handleOptionSelect("duplicate")}
+                  variant="outline"
+                  className="w-full h-auto p-6 rounded-2xl border-2 hover:border-[#2c5e2a] hover:bg-[#2c5e2a]/5 transition-all group"
+                >
+                  <div className="flex items-center gap-4 w-full">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Copy className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-semibold text-lg text-gray-900">Duplicate Existing Form</h3>
+                      <p className="text-sm text-gray-600">Copy one of your existing forms</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#2c5e2a] transition-colors" />
+                  </div>
+                </Button>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={handleClose} className="rounded-xl">
+                Cancel
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {step === "duplicate" && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-2xl font-bold text-[#2c5e2a]">
+                <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mr-3">
+                  <Copy className="w-4 h-4 text-white" />
+                </div>
+                Duplicate Form
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Select a form to duplicate
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-6 space-y-4">
+              {existingForms.map((form) => (
+                <Button
+                  key={form.id}
+                  onClick={() => setSelectedFormToDuplicate(form.id)}
+                  variant={selectedFormToDuplicate === form.id ? "default" : "outline"}
+                  className={`w-full h-auto p-4 rounded-xl text-left ${
+                    selectedFormToDuplicate === form.id 
+                      ? "bg-[#2c5e2a] hover:bg-[#234b21] text-white" 
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <FileText className="w-5 h-5" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{form.title}</h3>
+                      {form.description && (
+                        <p className="text-sm opacity-75">{form.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+            
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep("options")} className="rounded-xl">
+                Back
+              </Button>
+              <Button 
+                onClick={handleDuplicate}
+                disabled={!selectedFormToDuplicate || isCreating}
+                className="bg-[#2c5e2a] hover:bg-[#234b21] text-white rounded-xl"
+              >
+                {isCreating ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span className="ml-2">Duplicating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplicate Form
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
         {step === "details" && (
           <>
             <DialogHeader>
@@ -293,17 +497,9 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
               )}
             </div>
             
-            <DialogFooter className="flex-col gap-2">
-              <Button 
-                onClick={testGoogleAuth} 
-                variant="outline"
-                className="rounded-xl w-full"
-              >
-                Test Google Authentication
-              </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleClose} className="rounded-xl">
-                  Cancel
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep("options")} className="rounded-xl">
+                Back
                 </Button>
                 <Button 
                   onClick={handleCreate} 
@@ -322,7 +518,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                     </>
                   )}
                 </Button>
-              </div>
             </DialogFooter>
           </>
         )}

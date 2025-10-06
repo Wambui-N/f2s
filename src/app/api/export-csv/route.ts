@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     // Get the form to understand its structure
     const { data: form, error: formError } = await supabase
       .from("forms")
-      .select("form_data")
+      .select("fields")
       .eq("id", formId)
       .single();
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate CSV
-    const fields = form.form_data?.fields || [];
+    const fields = form.fields?.fields || [];
     const headers = ["Submitted At", ...fields.map((field: any) => field.label || field.columnName || field.id)];
     
     const csvRows = [headers.join(",")];

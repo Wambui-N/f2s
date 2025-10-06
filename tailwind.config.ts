@@ -10,11 +10,11 @@ const config: Config = {
     extend: {
       colors: {
         // Brand colors
-        'brand-orange': '#f95716',
-        'brand-pink': '#fcd4f0', 
-        'brand-brown': '#442c02',
-        'brand-beige': '#fff8e8',
-        'brand-green': '#2c5e2a',
+        'orange': '#f95716',
+        'pink': '#fcd4f0', 
+        'brown': '#442c02',
+        'beige': '#fff8e8',
+        'green': '#2c5e2a',
         brand: {
           50: "var(--color-brand-50)",
           100: "var(--color-brand-100)",

@@ -41,6 +41,18 @@ export interface FormField {
   required?: boolean;
   cssClass?: string;
   visibility?: "show" | "hide";
+  conditionalRules?: {
+    showWhen?: {
+      fieldId: string;
+      operator: "equals" | "contains" | "not_empty" | "empty";
+      value: string;
+    }[];
+    hideWhen?: {
+      fieldId: string;
+      operator: "equals" | "contains" | "not_empty" | "empty";
+      value: string;
+    }[];
+  };
 
   // Type-specific properties
   multiple?: boolean; // For file & image upload
@@ -73,11 +85,20 @@ export interface FormData {
     fontFamily: string;
     borderRadius: string;
     spacing: string;
+    backgroundColor?: string;
+    textColor?: string;
+    buttonTextColor?: string;
+    backgroundImageUrl?: string;
+    logoUrl?: string;
+    watermarkEnabled?: boolean;
+    watermarkText?: string;
   };
   settings: {
     submitText: string;
     successMessage: string;
     errorMessage: string;
+    redirectEnabled?: boolean;
+    redirectUrl?: string;
   };
   lastSaved?: Date;
   default_sheet_connection_id?: string | null;

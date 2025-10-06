@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { FormData, FormField } from "@/types/form";
+import type { FormData, FormField } from "@/components/builder/types";
 import { 
   Smartphone, 
   Monitor, 
@@ -63,11 +63,59 @@ export function FormPreview({
     }
   };
 
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    formData.fields.forEach((field) => {
+      if (field.required && !formValues[field.id]) {
+        errors.push(`${field.label} is required`);
+        return;
+      }
+      
+      const value = formValues[field.id];
+      if (!value) return;
+      
+      // Email validation
+      if (field.type === "email" && value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) {
+          errors.push(`${field.label} must be a valid email address`);
+        }
+      }
+      
+      // Number validation
+      if (field.type === "number" && value) {
+        const numValue = Number(value);
+        if (isNaN(numValue)) {
+          errors.push(`${field.label} must be a valid number`);
+        } else {
+          if (field.validation?.min !== undefined && numValue < field.validation.min) {
+            errors.push(`${field.label} must be at least ${field.validation.min}`);
+          }
+          if (field.validation?.max !== undefined && numValue > field.validation.max) {
+            errors.push(`${field.label} must be at most ${field.validation.max}`);
+          }
+        }
+      }
+    });
+    
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitMessage(null);
     setSubmitStatus(null);
+
+    // Validate form
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setSubmitStatus("error");
+      setSubmitMessage(`❌ ${validationErrors.join(", ")}`);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       if (isPreview) {
@@ -154,6 +202,59 @@ export function FormPreview({
     }
   };
 
+  const shouldShowField = (field: FormField) => {
+    if (!field.conditionalRules) return true;
+    
+    const { showWhen = [], hideWhen = [] } = field.conditionalRules;
+    
+    // Check hide conditions first
+    for (const rule of hideWhen) {
+      const fieldValue = formValues[rule.fieldId];
+      const ruleValue = rule.value;
+      
+      switch (rule.operator) {
+        case "equals":
+          if (fieldValue === ruleValue) return false;
+          break;
+        case "contains":
+          if (String(fieldValue).includes(ruleValue)) return false;
+          break;
+        case "not_empty":
+          if (fieldValue && fieldValue !== "") return false;
+          break;
+        case "empty":
+          if (!fieldValue || fieldValue === "") return false;
+          break;
+      }
+    }
+    
+    // Check show conditions
+    if (showWhen.length > 0) {
+      for (const rule of showWhen) {
+        const fieldValue = formValues[rule.fieldId];
+        const ruleValue = rule.value;
+        
+        switch (rule.operator) {
+          case "equals":
+            if (fieldValue === ruleValue) return true;
+            break;
+          case "contains":
+            if (String(fieldValue).includes(ruleValue)) return true;
+            break;
+          case "not_empty":
+            if (fieldValue && fieldValue !== "") return true;
+            break;
+          case "empty":
+            if (!fieldValue || fieldValue === "") return true;
+            break;
+        }
+      }
+      return false; // If show conditions exist but none match, hide
+    }
+    
+    return true;
+  };
+
   const renderField = (field: FormField) => {
     const value = formValues[field.id] || field.defaultValue || "";
 
@@ -161,7 +262,7 @@ export function FormPreview({
       return null;
     }
 
-    const baseInputClasses = "w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-300";
+    const baseInputClasses = "w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-300";
 
     switch (field.type) {
       case "text":
@@ -221,7 +322,7 @@ export function FormPreview({
                   value={option}
                   checked={value === option}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-green-600 focus:ring-green-500"
                   disabled={isSubmitting}
                   required={field.required}
                 />
@@ -247,7 +348,7 @@ export function FormPreview({
                       handleInputChange(field.id, currentValues.filter(v => v !== option));
                     }
                   }}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-green-600 focus:ring-green-500"
                   disabled={isSubmitting}
                 />
                 <span className="text-sm font-medium">{option}</span>
@@ -259,13 +360,13 @@ export function FormPreview({
       case "image":
         return (
           <div className="space-y-3">
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-400 transition-colors">
               <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
               <input
                 type="file"
                 multiple={field.multiple}
                 onChange={(e) => handleInputChange(field.id, e.target.files, true)}
-                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                 disabled={isSubmitting}
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -281,11 +382,11 @@ export function FormPreview({
   };
 
   return (
-    <Card className="shadow-xl border-0">
-      <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+    <Card className="shadow-xl border-0" style={{ background: formData.theme.backgroundColor }}>
+      <CardHeader className="pb-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
               <Eye className="w-4 h-4 text-white" />
             </div>
             <CardTitle className="text-xl">Live Preview</CardTitle>
@@ -301,7 +402,7 @@ export function FormPreview({
               variant={viewMode === "desktop" ? "default" : "outline"}
               size="sm"
               onClick={() => setViewMode("desktop")}
-              className="hover:bg-blue-50"
+              className="hover:bg-green-50"
             >
               <Monitor className="w-4 h-4" />
             </Button>
@@ -309,7 +410,7 @@ export function FormPreview({
               variant={viewMode === "mobile" ? "default" : "outline"}
               size="sm"
               onClick={() => setViewMode("mobile")}
-              className="hover:bg-blue-50"
+              className="hover:bg-green-50"
             >
               <Smartphone className="w-4 h-4" />
             </Button>
@@ -328,34 +429,64 @@ export function FormPreview({
       
       <CardContent className="p-8">
         <div className={`mx-auto transition-all duration-300 ${
-          viewMode === "mobile" ? "max-w-sm" : "max-w-2xl"
-        }`}>
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          viewMode === "mobile" ? "max-w-sm" : "w-full"
+        }`} style={{
+          fontFamily: formData.theme.fontFamily,
+        }}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden relative">
+            {formData.theme.watermarkEnabled && (
+              <div className="absolute inset-0 pointer-events-none select-none" style={{ backgroundImage: `repeating-linear-gradient(45deg, rgba(44,94,42,0.06) 0, rgba(44,94,42,0.06) 10px, transparent 10px, transparent 20px)` }} />
+            )}
             {/* Form Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4" />
+            {isPreview && (
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white relative group">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center overflow-hidden">
+                    {formData.theme.logoUrl ? (
+                      <img src={formData.theme.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">{formData.title}</h3>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Shield className="w-3 h-3" />
+                      <span className="text-xs opacity-90">Secure & Encrypted</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold">{formData.title}</h3>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Shield className="w-3 h-3" />
-                    <span className="text-xs opacity-90">Secure & Encrypted</span>
+                {formData.description && (
+                  <p className="text-green-100 leading-relaxed">
+                    {formData.description}
+                  </p>
+                )}
+                {/* Header Controls */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex space-x-1">
+                    <button
+                      className="p-1 bg-white/20 rounded hover:bg-white/30 text-white text-xs"
+                      title="Edit header"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="p-1 bg-white/20 rounded hover:bg-white/30 text-white text-xs"
+                      title="Remove header"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               </div>
-              {formData.description && (
-                <p className="text-blue-100 leading-relaxed">
-                  {formData.description}
-                </p>
-              )}
-            </div>
+            )}
 
             {/* Form Content */}
-            <div className="p-8">
+            <div className="p-8" style={{ color: formData.theme.textColor }}>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {formData.fields.map((field) => {
+                  if (!shouldShowField(field)) return null;
+                  
                   const fieldElement = renderField(field);
                   if (!fieldElement) return null;
 

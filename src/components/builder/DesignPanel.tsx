@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -20,95 +21,47 @@ import {
   Maximize2,
   Minimize2,
   Image as ImageIcon,
+  Palette,
+  X,
 } from "lucide-react";
 
-export function DesignPanel() {
-  const { formData, updateFormTitle, updateFormDescription } = useFormStore();
+interface DesignPanelProps {
+  onClose: () => void;
+}
 
-  const updateTheme = (key: string, value: string) => {
-    // This would need to be added to the store
-    console.log("Update theme:", key, value);
+export function DesignPanel({ onClose }: DesignPanelProps) {
+  const { formData } = useFormStore();
+
+  const updateTheme = (key: string, value: any) => {
+    useFormStore.setState((state) => ({
+      formData: {
+        ...state.formData,
+        theme: {
+          ...state.formData.theme,
+          [key]: value,
+        },
+      },
+    }));
   };
 
   return (
-    <div className="space-y-6">
-      {/* Theme Selection */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Theme</Label>
-        <Select defaultValue="light">
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="light">Light</SelectItem>
-            <SelectItem value="dark">Dark</SelectItem>
-            <SelectItem value="minimal">Minimal</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between p-6 border-b">
+        <h2 className="text-xl font-semibold flex items-center">
+          <Palette className="w-5 h-5 mr-2" />
+          Design Settings
+        </h2>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          <X size={16} />
+        </Button>
       </div>
-
-      {/* Font Selection */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Font</Label>
-        <Select
-          value={formData.theme.fontFamily}
-          onValueChange={(value) => updateTheme("fontFamily", value)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Inter">Inter</SelectItem>
-            <SelectItem value="Roboto">Roboto</SelectItem>
-            <SelectItem value="Open Sans">Open Sans</SelectItem>
-            <SelectItem value="Lato">Lato</SelectItem>
-            <SelectItem value="Poppins">Poppins</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Colors Section */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* Brand Colors */}
       <div className="space-y-4">
-        <Label className="text-sm font-medium">Colors</Label>
-
+        <Label className="text-sm font-medium">Brand Colors</Label>
         <div className="grid grid-cols-2 gap-4">
-          {/* Background */}
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Background</Label>
-            <div className="flex items-center space-x-2">
-              <div
-                className="w-8 h-8 rounded border border-gray-300"
-                style={{ backgroundColor: "#FFFFFF" }}
-              />
-              <Input
-                value="#FFFFFF"
-                onChange={(e) => updateTheme("backgroundColor", e.target.value)}
-                className="flex-1 text-xs"
-              />
-            </div>
-          </div>
-
-          {/* Text */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Text</Label>
-            <div className="flex items-center space-x-2">
-              <div
-                className="w-8 h-8 rounded border border-gray-300"
-                style={{ backgroundColor: "#37352F" }}
-              />
-              <Input
-                value="#37352F"
-                onChange={(e) => updateTheme("textColor", e.target.value)}
-                className="flex-1 text-xs"
-              />
-            </div>
-          </div>
-
-          {/* Button Background */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">
-              Button background
-            </Label>
+            <Label className="text-xs text-gray-600">Primary Color</Label>
             <div className="flex items-center space-x-2">
               <div
                 className="w-8 h-8 rounded border border-gray-300"
@@ -121,17 +74,43 @@ export function DesignPanel() {
               />
             </div>
           </div>
-
-          {/* Button Text */}
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Button text</Label>
+            <Label className="text-xs text-gray-600">Text Color</Label>
             <div className="flex items-center space-x-2">
               <div
                 className="w-8 h-8 rounded border border-gray-300"
-                style={{ backgroundColor: "#FFFFFF" }}
+                style={{ backgroundColor: formData.theme.textColor || "#111827" }}
               />
               <Input
-                value="#FFFFFF"
+                value={formData.theme.textColor || "#111827"}
+                onChange={(e) => updateTheme("textColor", e.target.value)}
+                className="flex-1 text-xs"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Background</Label>
+            <div className="flex items-center space-x-2">
+              <div
+                className="w-8 h-8 rounded border border-gray-300"
+                style={{ backgroundColor: formData.theme.backgroundColor || "#ffffff" }}
+              />
+              <Input
+                value={formData.theme.backgroundColor || "#ffffff"}
+                onChange={(e) => updateTheme("backgroundColor", e.target.value)}
+                className="flex-1 text-xs"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Button Text</Label>
+            <div className="flex items-center space-x-2">
+              <div
+                className="w-8 h-8 rounded border border-gray-300"
+                style={{ backgroundColor: formData.theme.buttonTextColor || "#ffffff" }}
+              />
+              <Input
+                value={formData.theme.buttonTextColor || "#ffffff"}
                 onChange={(e) => updateTheme("buttonTextColor", e.target.value)}
                 className="flex-1 text-xs"
               />
@@ -139,6 +118,93 @@ export function DesignPanel() {
           </div>
         </div>
       </div>
+
+      {/* Typography */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">Typography</Label>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Font Family</Label>
+            <Select
+              value={formData.theme.fontFamily}
+              onValueChange={(value) => updateTheme("fontFamily", value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Inter">Inter</SelectItem>
+                <SelectItem value="Roboto">Roboto</SelectItem>
+                <SelectItem value="Open Sans">Open Sans</SelectItem>
+                <SelectItem value="Lato">Lato</SelectItem>
+                <SelectItem value="Poppins">Poppins</SelectItem>
+                <SelectItem value="Montserrat">Montserrat</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-600">Border Radius</Label>
+              <Input
+                value={formData.theme.borderRadius}
+                onChange={(e) => updateTheme("borderRadius", e.target.value)}
+                placeholder="8px"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-600">Field Spacing</Label>
+              <Input
+                value={formData.theme.spacing}
+                onChange={(e) => updateTheme("spacing", e.target.value)}
+                placeholder="16px"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Branding */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">Branding</Label>
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Logo URL</Label>
+            <Input
+              value={formData.theme.logoUrl || ""}
+              onChange={(e) => updateTheme("logoUrl", e.target.value)}
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-600">Background Image URL</Label>
+            <Input
+              value={formData.theme.backgroundImageUrl || ""}
+              onChange={(e) => updateTheme("backgroundImageUrl", e.target.value)}
+              placeholder="https://example.com/background.jpg"
+            />
+          </div>
+          <div className="space-y-3 p-3 border rounded-lg bg-gray-50">
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={formData.theme.watermarkEnabled || false}
+                onCheckedChange={(checked) => updateTheme("watermarkEnabled", checked)}
+              />
+              <Label className="text-sm">Show Shelfcue watermark</Label>
+            </div>
+            {formData.theme.watermarkEnabled && (
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Watermark Text</Label>
+                <Input
+                  value={formData.theme.watermarkText || "Shelfcue"}
+                  onChange={(e) => updateTheme("watermarkText", e.target.value)}
+                  placeholder="Shelfcue"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
 
       {/* Layout Section */}
       <div className="space-y-4">
@@ -360,6 +426,7 @@ export function DesignPanel() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

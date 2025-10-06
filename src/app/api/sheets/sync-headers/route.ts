@@ -34,7 +34,7 @@ export async function POST(
     // Get all forms that use this sheet connection to gather headers
     const { data: forms, error: formsError } = await supabase
       .from("forms")
-      .select("form_data")
+      .select("fields")
       .eq("default_sheet_connection_id", connectionId);
 
     if (formsError) {
@@ -47,8 +47,8 @@ export async function POST(
     // Extract all unique field labels from forms
     const allHeaders = new Set<string>();
     forms?.forEach((form) => {
-      if (form.form_data?.fields) {
-        form.form_data.fields.forEach((field: FormField) => {
+      if (form.fields?.fields) {
+        form.fields.fields.forEach((field: FormField) => {
           if (
             field.label &&
             field.type !== "divider" &&

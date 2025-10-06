@@ -23,7 +23,7 @@ export default async function FormPage({
       setLoading(true);
       const { data, error } = await supabase
         .from("forms")
-        .select("form_data, status")
+        .select("fields, status")
         .eq("id", formId)
         .single();
 
@@ -33,7 +33,7 @@ export default async function FormPage({
       } else if (data.status !== "published") {
         setError("This form is not currently active.");
       } else {
-        setFormData(data.form_data as FormData);
+        setFormData(data.fields as FormData);
         // Track form view for analytics
         trackFormViewAuto(formId).catch(error => {
           console.error('Failed to track form view:', error);

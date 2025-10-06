@@ -1,37 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import {
+  createRouteHandlerClient,
+} from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { googleSheetsService } from "@/lib/googleSheets";
+import { GoogleSheetsService } from "@/lib/googleSheets";
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    // Get and verify the user using the correct cookie handling
+    const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-    
-    // Get the session from the request headers
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: "Missing authorization header" }, { status: 401 });
-    }
+    const { data: { session } } = await supabase.auth.getSession();
 
-    const token = authHeader.split(' ')[1];
-    
-    // Verify the session using the token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error("Auth error:", userError);
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const user = session.user;
+
+    // 2. Create a Supabase admin client to bypass RLS
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      throw new Error("Missing Supabase URL or service role key");
+    }
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+    );
 
     const { sheetName, accessToken, refreshToken } = await request.json();
 
     if (!sheetName || !accessToken || !refreshToken) {
       return NextResponse.json(
         { error: "Sheet name, access token, and refresh token are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
+
+    // 3. Pass the admin client to the Google Sheets service
+    const googleSheetsService = new GoogleSheetsService(supabaseAdmin);
 
     // Create the Google Sheet
     console.log("Creating Google Sheet with:", {

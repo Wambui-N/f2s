@@ -43,10 +43,17 @@ const initialFormData: FormData = {
     },
   ],
   theme: {
-    primaryColor: "#3b82f6",
+    primaryColor: "#2c5e2a",
     fontFamily: "Inter",
     borderRadius: "8px",
     spacing: "16px",
+    backgroundColor: "#ffffff",
+    textColor: "#111827",
+    buttonTextColor: "#ffffff",
+    backgroundImageUrl: "",
+    logoUrl: "",
+    watermarkEnabled: true,
+    watermarkText: "Shelfcue",
   },
   settings: {
     submitText: "Book Consultation",
@@ -54,6 +61,8 @@ const initialFormData: FormData = {
       "Thank you! We'll be in touch within 24 hours to schedule your consultation.",
     errorMessage:
       "There was an error submitting your request. Please try again or contact us directly.",
+    redirectEnabled: false,
+    redirectUrl: "",
   },
   lastSaved: new Date(),
 };
